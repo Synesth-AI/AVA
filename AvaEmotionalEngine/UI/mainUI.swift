@@ -7,6 +7,12 @@ struct MainUI: View {
     @State private var omega: Double = 0.0
     @State private var drift: Double = 0.0
     @State private var isGuardianMode: Bool = false
+    
+    struct MainUI_Previews: PreviewProvider {
+        static var previews: some View {
+            MainUI()
+        }
+    }
 
     var body: some View {
         ZStack {
