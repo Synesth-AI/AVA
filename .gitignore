@@ -1,0 +1,34 @@
+# Xcode
+.DS_Store
+*.swpm
+*.xcodeproj/*
+!*.xcodeproj/project.pbxproj
+!*.xcodeproj/xcshareddata/
+!*.xcworkspace/contents.xcworkspacedata
+*.xcuserstate
+*.xcuserdatad/
+
+# Build directory
+build/
+DerivedData/
+
+# Swift Package Manager
+.build/
+Packages/
+Package.pins
+Package.resolved
+*.xcodeproj
+
+# CocoaPods
+Pods/
+Podfile.lock
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+
+# Code Injection
+*.xcodeproj/xcuserdata/*.xcuserdatad/Other/
+*.xcodeproj/xcuserdata/*.xcuserdatad/xcschemes
