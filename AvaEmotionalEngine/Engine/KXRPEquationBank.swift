@@ -24,7 +24,9 @@ class KXRPEquationBank {
     }
 
     private func computeSuppressionCoefficient(voice: VoiceFeatures, hrv: HRVMetrics, entropy: Double, eeg: EEGReading) -> Double {
-        return (voice.calmMatch + hrv.coherence) / (entropy + eeg.beta + epsilon)
+        // Using hnr (Harmonics-to-Noise Ratio) as a measure of voice quality
+        // Higher hnr indicates clearer, more harmonic speech
+        return (voice.hnr + hrv.coherence) / (entropy + eeg.beta + epsilon)
     }
 
     private func computeMemoryRecall(eeg: EEGReading, voice: VoiceFeatures, hrv: HRVMetrics) -> Double {

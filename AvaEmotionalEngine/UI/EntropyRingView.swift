@@ -44,3 +44,9 @@ struct EntropyRingView: View {
         }
     }
 }
+
+struct MainUI_Previews: PreviewProvider {
+    static var previews: some View {
+        MainUI()
+    }
+}

@@ -1,44 +1,87 @@
 import SwiftUI
 
 struct ContentView: View {
-    @State private var psi: Float = 0.0
-    @State private var entropy: Float = 0.0
-    @State private var coherence: Float = 0.0
-    @State private var integrity: Float = 0.0
-    @State private var gating: Bool = false
-
-    let engine = KXRPEngine()
-    let gate = GatingFunction()
-    let responder = AVAResponder()
-    let eeg = MuseEEGReceiver()
-
+    let psi: Float
+    let entropy: Float
+    let coherence: Float
+    let integrity: Float
+    let lastMessage: String
+    
+    // Computed property to determine if gating is active
+    private var gating: Bool {
+        // Gating is considered active when we have a last message
+        return !lastMessage.isEmpty
+    }
+    
     var body: some View {
         VStack(spacing: 20) {
-            Text("AVA Emotional Engine").font(.largeTitle).padding()
-            Text("Ψ(t): \(String(format: "%.2f", psi))")
-            Text("S(t): \(String(format: "%.2f", entropy))")
-            Text("C(t): \(String(format: "%.2f", coherence))")
-            Text("Ω(t): \(String(format: "%.2f", integrity))")
-            Text("Gating: \(gating ? "ON" : "OFF")")
-                .foregroundColor(gating ? .green : .red)
-            Spacer()
-            Button("Run Engine Once") {
-                let bands = eeg.getBandPowers()
-                let metrics = engine.computeMetrics(from: bands)
-                psi = metrics.psi
-                entropy = metrics.entropy
-                coherence = metrics.coherence
-                integrity = metrics.integrity
-                gating = gate.shouldRespond(
-                    psi: psi,
-                    entropy: entropy,
-                    coherence: coherence,
-                    integrity: integrity
-                )
-                responder.respondIfPermitted(gating, message: "Emotional field is stable.")
+            Text("AVA Emotional Engine")
+                .font(.largeTitle)
+                .padding()
+            
+            // Metrics display
+            VStack(spacing: 10) {
+                MetricView(label: "Ψ(t):", value: psi)
+                MetricView(label: "S(t):", value: entropy)
+                MetricView(label: "C(t):", value: coherence)
+                MetricView(label: "Ω(t):", value: integrity)
+                
+                Text("Gating: \(gating ? "ON" : "OFF")")
+                    .foregroundColor(gating ? .green : .red)
+                    .padding(.top, 10)
+                
+                if !lastMessage.isEmpty {
+                    Text("Last Message:")
+                        .font(.headline)
+                        .padding(.top, 10)
+                    Text(lastMessage)
+                        .multilineTextAlignment(.center)
+                        .padding()
+                        .background(Color.blue.opacity(0.1))
+                        .cornerRadius(8)
+                }
             }
-            .padding().background(Color.blue).foregroundColor(.white).cornerRadius(10)
+            .padding()
+            .background(Color.gray.opacity(0.1))
+            .cornerRadius(12)
+            
+            Spacer()
+            
+            // Status indicator
+            Text("Running...")
+                .font(.caption)
+                .foregroundColor(.gray)
         }
         .padding()
     }
+}
+
+// Helper view for consistent metric display
+struct MetricView: View {
+    let label: String
+    let value: Float
+    
+    var body: some View {
+        HStack {
+            Text(label)
+                .font(.headline)
+                .frame(width: 60, alignment: .leading)
+            
+            ProgressView(value: Double(value), total: 1.0)
+                .progressViewStyle(LinearProgressViewStyle())
+            
+            Text(String(format: "%.2f", value))
+                .frame(width: 50, alignment: .trailing)
+        }
+    }
+}
+
+#Preview {
+    ContentView(
+        psi: 0.75,
+        entropy: 0.45,
+        coherence: 0.82,
+        integrity: 0.67,
+        lastMessage: "I am AVA. Emotional field is stable."
+    )
 }

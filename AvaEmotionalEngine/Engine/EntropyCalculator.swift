@@ -13,14 +13,17 @@ class EntropyCalculator {
     }
 
     private func computeEntropy(eeg: EEGReading?, hrv: HRVMetrics?, voice: VoiceFeatures?) -> Double {
-        let brainNoise = eeg?.betaGammaChaos ?? 0.0
+        // Calculate beta-gamma chaos if we have EEG data
+        let betaGammaChaos = eeg != nil ? (eeg!.beta + eeg!.gamma) / 2.0 : 0.0
         let heartFluct = hrv?.entropy ?? 0.0
         let speechJitter = voice?.pauseDisorder ?? 0.0
-        return (brainNoise + heartFluct + speechJitter) / 3.0
+        return (betaGammaChaos + heartFluct + speechJitter) / 3.0
     }
 
     private func computeCoherence(eeg: EEGReading?, hrv: HRVMetrics?) -> Double {
-        guard let alpha = eeg?.alpha, let hrvCoh = hrv?.coherence else { return 0.0 }
+        // Calculate coherence based on alpha waves and HRV coherence
+        let alpha = eeg?.alpha ?? 0.0
+        let hrvCoh = hrv?.coherence ?? 0.0
         return (alpha + hrvCoh) / 2.0
     }
 

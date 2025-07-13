@@ -1,29 +1,7 @@
-// EEG, HRV, and Voice input data models
-struct EEGReading {
-    let alpha: Double
-    let theta: Double
-    let beta: Double
-    let gamma: Double
-    let alphaThetaPresence: Double
-    let betaGammaChaos: Double
-}
-
-struct HRVMetrics {
-    let rmssd: Double
-    let sdnn: Double
-    let coherence: Double
-    let entropy: Double
-}
-
-struct VoiceFeatures {
-    let calmMatch: Double       // 0–1, grounded speech
-    let pauseDisorder: Double   // 0–1, high = stress/tension
-    let facialConsistencyScore: Double  // 0–1, truth-to-expression alignment
-}
-
 // AVAEmotionEngine.swift
 
 import Foundation
+import SwiftUI
 
 class AVAEmotionalEngine {
     // Core emotional state
@@ -44,10 +22,12 @@ class AVAEmotionalEngine {
     }
 
     private func computePsi(eeg: EEGReading?, hrv: HRVMetrics?, voice: VoiceFeatures?) -> Double {
-        let eegScore = eeg?.alphaThetaPresence ?? 0.0
+        // Calculate alpha-theta presence from EEG data if available
+        let alphaThetaPresence = eeg != nil ? (eeg!.alpha + eeg!.theta) / 2.0 : 0.0
         let hrvScore = hrv?.coherence ?? 0.0
-        let voiceScore = voice?.calmMatch ?? 0.0
-        return (0.4 * eegScore) + (0.4 * hrvScore) + (0.2 * voiceScore)
+        // Using hnr (Harmonics-to-Noise Ratio) as a measure of voice calmness
+        let voiceScore = voice?.hnr ?? 0.0
+        return (0.4 * alphaThetaPresence) + (0.4 * hrvScore) + (0.2 * voiceScore)
     }
 
     private func computeEntropy(eeg: EEGReading?, hrv: HRVMetrics?, voice: VoiceFeatures?) -> Double {
@@ -64,8 +44,9 @@ class AVAEmotionalEngine {
 
     private func computeTruthSignal(eeg: EEGReading?, voice: VoiceFeatures?) -> Double {
         let symbolicAlignment = computeSymbolicMatch(eeg, voice)
-        let facialEntropyDrop = voice?.facialConsistencyScore ?? 0.0
-        return (0.6 * symbolicAlignment) + (0.4 * facialEntropyDrop)
+        // Using facialConsistencyScore directly for facial consistency
+        let facialConsistency = voice?.facialConsistencyScore ?? 0.0
+        return (0.6 * symbolicAlignment) + (0.4 * facialConsistency)
     }
 
     private func computeSymbolicMatch(_ eeg: EEGReading?, _ voice: VoiceFeatures?) -> Double {
