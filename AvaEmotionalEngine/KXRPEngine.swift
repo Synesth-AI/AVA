@@ -37,9 +37,9 @@ class KXRPEngine {
 
     // Core metric computations (same as in your test code)
     private func computePsi(eeg: EEGReading, hrv: HRVMetrics, voice: VoiceFeatures) -> Double {
-        let eegScore = eeg.alphaThetaPresence
+        let eegScore = (eeg.alpha + eeg.theta) / 2.0
         let hrvScore = hrv.coherence
-        let voiceScore = voice.calmMatch
+        let voiceScore = voice.hnr
         return (0.4 * eegScore) + (0.4 * hrvScore) + (0.2 * voiceScore)
     }
 

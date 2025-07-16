@@ -52,7 +52,7 @@ class VoiceFeatureExtractor {
         let shimmer = 0.02 + 0.01 * abs(cos(t))
         let hnr = 0.7 + 0.2 * sin(t)
         let pauseCount = Int(3 + 2 * sin(t))
-        let speakingRate = 120.0 + 30.0 * cos(t)
+        let speakingRate = Double(120.0 + 30.0 * cos(t))
         let facialConsistencyScore = 0.7 + 0.2 * abs(sin(t))
         return VoiceFeatures(
             jitter: Double(jitter),
