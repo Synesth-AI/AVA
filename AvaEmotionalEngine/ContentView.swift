@@ -6,30 +6,32 @@ struct ContentView: View {
     let coherence: Float
     let integrity: Float
     let lastMessage: String
-    
+    let kxrpScores: [Float]?
+
+    @State private var showAllEquations = false
+
     // Computed property to determine if gating is active
     private var gating: Bool {
-        // Gating is considered active when we have a last message
         return !lastMessage.isEmpty
     }
-    
+
     var body: some View {
         VStack(spacing: 20) {
             Text("AVA Emotional Engine")
                 .font(.largeTitle)
                 .padding()
-            
+
             // Metrics display
             VStack(spacing: 10) {
                 MetricView(label: "Ψ(t):", value: psi)
                 MetricView(label: "S(t):", value: entropy)
                 MetricView(label: "C(t):", value: coherence)
                 MetricView(label: "Ω(t):", value: integrity)
-                
+
                 Text("Gating: \(gating ? "ON" : "OFF")")
                     .foregroundColor(gating ? .green : .red)
                     .padding(.top, 10)
-                
+
                 if !lastMessage.isEmpty {
                     Text("Last Message:")
                         .font(.headline)
@@ -40,13 +42,36 @@ struct ContentView: View {
                         .background(Color.blue.opacity(0.1))
                         .cornerRadius(8)
                 }
+
+                // Toggle and list for 50 equation scores
+                if let kxrpScores = kxrpScores {
+                    Toggle("Show All 50 Equation Scores", isOn: $showAllEquations)
+                        .padding(.top, 10)
+                    if showAllEquations {
+                        ScrollView {
+                            VStack(alignment: .leading, spacing: 4) {
+                                ForEach(0..<kxrpScores.count, id: \.self) { i in
+                                    HStack {
+                                        Text("KXRP \(i+1):")
+                                            .font(.caption)
+                                            .frame(width: 70, alignment: .leading)
+                                        Text(String(format: "%.4f", kxrpScores[i]))
+                                            .font(.caption)
+                                    }
+                                }
+                            }
+                            .padding(.top, 8)
+                        }
+                        .frame(maxHeight: 300)
+                    }
+                }
             }
             .padding()
             .background(Color.gray.opacity(0.1))
             .cornerRadius(12)
-            
+
             Spacer()
-            
+
             // Status indicator
             Text("Running...")
                 .font(.caption)
@@ -82,6 +107,7 @@ struct MetricView: View {
         entropy: 0.45,
         coherence: 0.82,
         integrity: 0.67,
-        lastMessage: "I am AVA. Emotional field is stable."
+        lastMessage: "I am AVA. Emotional field is stable.",
+        kxrpScores: Array(repeating: 0.1234, count: 50)
     )
 }
