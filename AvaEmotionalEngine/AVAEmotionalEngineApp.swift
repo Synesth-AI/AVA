@@ -32,6 +32,7 @@ struct AVAEmotionalEngineApp: App {
         0, false, [], 0, 0
     )
     @State private var lastMessage: String = ""
+    @State private var gatingEnabled: Bool = true
     
     var body: some Scene {
         WindowGroup {
@@ -46,7 +47,8 @@ struct AVAEmotionalEngineApp: App {
                 psiOmegaLock: metrics.psiOmegaLock,
                 symbolicClassifications: metrics.symbolicClassifications,
                 forecastScore: metrics.forecastScore,
-                mesqi: metrics.mesqi
+                mesqi: metrics.mesqi,
+                isGatingEnabled: $gatingEnabled
             )
             .onReceive(timer) { _ in
                 updateMetrics()
@@ -59,7 +61,8 @@ struct AVAEmotionalEngineApp: App {
         let hrvMetrics = hrvEmulator.getMetrics()
         let voiceFeatures = voiceExtractor.getFeatures()
         let newMetrics = engine.computeMetrics(eeg: bands, hrv: hrvMetrics, voice: voiceFeatures)
-        let shouldSpeak = gate.shouldRespond(
+        // Determine if AVA should respond, respecting the gating switch
+        let shouldSpeak = gatingEnabled && gate.shouldRespond(
             psi: newMetrics.psi,
             entropy: newMetrics.entropy,
             coherence: newMetrics.coherence,

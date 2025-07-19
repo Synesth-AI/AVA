@@ -14,10 +14,11 @@ struct ContentView: View {
     let mesqi: Float
 
     @State private var showAllEquations = false
+    @Binding var isGatingEnabled: Bool
 
-    // Computed property to determine if gating is active
+    // Determine if gating feature is enabled
     private var gating: Bool {
-        return !lastMessage.isEmpty
+        return isGatingEnabled
     }
 
     var body: some View {
@@ -48,10 +49,15 @@ struct ContentView: View {
                     Text(psiOmegaLock ? "🔓" : "❌")
                         .font(.body)
                 }
-                if !symbolicClassifications.isEmpty {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Symbols:")
-                            .font(.headline)
+                // Symbols section: always display, show 'None' if empty
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Symbols:")
+                        .font(.headline)
+                    if symbolicClassifications.isEmpty {
+                        Text("None")
+                            .font(.caption)
+                            .italic()
+                    } else {
                         ForEach(symbolicClassifications, id: \.self) { sym in
                             Text("• \(sym)")
                                 .font(.caption)
@@ -76,6 +82,8 @@ struct ContentView: View {
                 Text("Gating: \(gating ? "ON" : "OFF")")
                     .foregroundColor(gating ? .green : .red)
                     .padding(.top, 10)
+                Toggle("Enable Gating", isOn: $isGatingEnabled)
+                    .padding(.top, 5)
 
                 if !lastMessage.isEmpty {
                     Text("Last Message:")
