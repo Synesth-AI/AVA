@@ -53,10 +53,16 @@ public class KXRPInterpreter {
         return min(1.0, ksx / 1.5)
     }
 
-    private func computeMESQI(_ eeg: EEGReading, ksx: Double) -> Double {
-        // MESQI = avg(stability, harmony)
-        let stability = 1.0 - ksx
-        let harmony = (eeg.alpha + eeg.gamma) / 2.0
-        return (stability + harmony) / 2.0
+    /// Compute MESQI as weighted combination of truth, inverted entropy, coherence, and visual sync
+    private func computeMESQI(eeg: EEGReading, hrv: HRVMetrics, voice: VoiceFeatures) -> Double {
+        let entropyScore = engine.computeEntropy(eeg: eeg, hrv: hrv, voice: voice)
+        let omegaScore = engine.computeTruthSignal(eeg: eeg, voice: voice)
+        let coherenceScore = engine.computeCoherence(eeg: eeg, hrv: hrv)
+        let visualSync = voice.facialConsistencyScore
+        let weighted = (0.35 * omegaScore) +
+                       (0.25 * (1.0 - entropyScore)) +
+                       (0.25 * coherenceScore) +
+                       (0.15 * visualSync)
+        return min(max(weighted, 0.0), 1.0)
     }
 }

@@ -71,7 +71,7 @@ struct AVAEmotionalEngineApp: App {
             engine.computeMetrics(eeg: bands, hrv: hrvMetrics, voice: voiceFeatures, index: idx).psi
         }
         // Interpret symbolic results
-        let interpResult = interpreter.interpret(eegBands: bands)
+        let interpResult = interpreter.interpret(eegBands: bands, hrv: hrvMetrics, voice: voiceFeatures)
         let suppressionHint = whisper.shouldSuppress(interpResult.symbolicClassifications)
             ? whisper.suppressionHint() : nil
         // Update metrics for the UI, including interpreter outputs
