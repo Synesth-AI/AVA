@@ -32,6 +32,46 @@ struct ContentView: View {
                 MetricView(label: "S(t):", value: entropy)
                 MetricView(label: "C(t):", value: coherence)
                 MetricView(label: "Ω(t):", value: integrity)
+                // Interpreter results
+                Divider()
+                HStack {
+                    Text("ΔKSX:")
+                        .font(.headline)
+                    Spacer()
+                    Text(String(format: "%.4f", ksxDelta))
+                        .font(.body)
+                }
+                HStack {
+                    Text("ΨΩ Lock:")
+                        .font(.headline)
+                    Spacer()
+                    Text(psiOmegaLock ? "🔓" : "❌")
+                        .font(.body)
+                }
+                if !symbolicClassifications.isEmpty {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Symbols:")
+                            .font(.headline)
+                        ForEach(symbolicClassifications, id: \.self) { sym in
+                            Text("• \(sym)")
+                                .font(.caption)
+                        }
+                    }
+                }
+                HStack {
+                    Text("Forecast:")
+                        .font(.headline)
+                    Spacer()
+                    Text(String(format: "%.4f", forecastScore))
+                        .font(.body)
+                }
+                HStack {
+                    Text("MESQI:")
+                        .font(.headline)
+                    Spacer()
+                    Text(String(format: "%.4f", mesqi))
+                        .font(.body)
+                }
 
                 Text("Gating: \(gating ? "ON" : "OFF")")
                     .foregroundColor(gating ? .green : .red)
