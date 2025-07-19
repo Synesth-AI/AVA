@@ -10,13 +10,14 @@ public struct KXRPResult {
 }
 
 public class KXRPInterpreter {
+    private let engine = KXRPEngine()
     /// Interpret a raw EEG snapshot into a symbolic result
-    public func interpret(eegBands: EEGReading) -> KXRPResult {
+    public func interpret(eegBands: EEGReading, hrv: HRVMetrics, voice: VoiceFeatures) -> KXRPResult {
         let ksx = computeKSX(eegBands)
         let lock = ksx < 0.2
         let symbols = classifySymbolicTruths(from: eegBands)
         let forecast = predictSymbolicDrift(ksx: ksx)
-        let mesqi = computeMESQI(eegBands, ksx: ksx)
+        let mesqi = computeMESQI(eeg: eegBands, hrv: hrv, voice: voice)
         return KXRPResult(
             ksxDelta: ksx,
             psiOmegaLock: lock,

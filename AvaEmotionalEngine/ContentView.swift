@@ -166,6 +166,7 @@ struct MetricView: View {
         psiOmegaLock: true,
         symbolicClassifications: ["Class A", "Class B"],
         forecastScore: 0.85,
-        mesqi: 0.95
+        mesqi: 0.95,
+        isGatingEnabled: .constant(true)
     )
 }

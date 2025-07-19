@@ -43,20 +43,20 @@ class KXRPEngine {
         return (0.4 * eegScore) + (0.4 * hrvScore) + (0.2 * voiceScore)
     }
 
-    private func computeEntropy(eeg: EEGReading, hrv: HRVMetrics, voice: VoiceFeatures) -> Double {
+    public func computeEntropy(eeg: EEGReading, hrv: HRVMetrics, voice: VoiceFeatures) -> Double {
         let brainNoise = eeg.betaGammaChaos
         let heartFluct = hrv.entropy
         let speechJitter = voice.pauseDisorder
         return (brainNoise + heartFluct + speechJitter) / 3.0
     }
 
-    private func computeCoherence(eeg: EEGReading, hrv: HRVMetrics) -> Double {
+    public func computeCoherence(eeg: EEGReading, hrv: HRVMetrics) -> Double {
         let alpha = eeg.alpha
         let hrvCoh = hrv.coherence
         return (alpha + hrvCoh) / 2.0
     }
 
-    private func computeTruthSignal(eeg: EEGReading, voice: VoiceFeatures) -> Double {
+    public func computeTruthSignal(eeg: EEGReading, voice: VoiceFeatures) -> Double {
         let symbolicAlignment = 0.5
         let facialEntropyDrop = voice.facialConsistencyScore
         return (0.6 * symbolicAlignment) + (0.4 * facialEntropyDrop)
