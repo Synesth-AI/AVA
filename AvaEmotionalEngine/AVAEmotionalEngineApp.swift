@@ -53,6 +53,20 @@ struct AVAEmotionalEngineApp: App {
             .onReceive(timer) { _ in
                 updateMetrics()
             }
+            .toolbar {
+                ToolbarItem(placement: .bottomBar) {
+                    Button("Test AVA Speak") {
+                        ava.respondBasedOnMetrics(
+                            psi: 0.9,
+                            entropy: 0.1,
+                            coherence: 0.8,
+                            integrity: 0.9,
+                            kxrpValues: [1: 0.9],
+                            gating: true
+                        )
+                    }
+                }
+            }
         }
     }
     
@@ -91,14 +105,7 @@ struct AVAEmotionalEngineApp: App {
             Float(interpResult.mesqi)
         )
         
-        // Handle AVA response
-        if shouldSpeak {
-            let message = "I am AVA. Emotional field is stable."
-            ava.respondIfPermitted(true, message: message)
-            lastMessage = message
-        } else {
-            lastMessage = ""
-        }
+
         
         // Log to console
         print("Ψ: \(newMetrics.psi), S: \(newMetrics.entropy), C: \(newMetrics.coherence), Ω: \(newMetrics.integrity), G: \(shouldSpeak)")

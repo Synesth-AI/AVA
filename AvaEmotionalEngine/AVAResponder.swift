@@ -4,20 +4,15 @@ import AVFoundation
 class AVAResponder {
     let synthesizer = AVSpeechSynthesizer()
 
-    // Core gating function (respond only if state is aligned)
-    private func shouldRespond(psi: Double, entropy: Double, coherence: Double, integrity: Double) -> Bool {
-        return psi > 0.6 && entropy < 0.3 && coherence > 0.5 && integrity > 0.6
-    }
-
     // Main function: generate and speak response based on metrics and KXRP values
-    func respondBasedOnMetrics(psi: Double, entropy: Double, coherence: Double, integrity: Double, kxrpValues: [Int: Double]) {
-        guard shouldRespond(psi: psi, entropy: entropy, coherence: coherence, integrity: integrity) else {
-            print("AVA: Gating failed. Remaining silent to respect emotional state.")
-            return
-        }
-
+    func respondBasedOnMetrics(psi: Double, entropy: Double, coherence: Double, integrity: Double, kxrpValues: [Int: Double], gating: Bool = true) {
         let message = generateMessage(psi: psi, entropy: entropy, coherence: coherence, integrity: integrity, kxrpValues: kxrpValues)
-        speak(message: message)
+        let isFallback = message == "Emotional field is balanced. How are you feeling right now?"
+        if !gating || !isFallback {
+            speak(message: message)
+        } else {
+            print("AVA: Gating failed. Remaining silent to respect emotional state.")
+        }
     }
 
     // Expanded: generate dynamic message incorporating KXRP values
