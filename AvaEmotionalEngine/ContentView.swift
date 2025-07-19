@@ -7,6 +7,11 @@ struct ContentView: View {
     let integrity: Float
     let lastMessage: String
     let kxrpScores: [Float]?
+    let ksxDelta: Float
+    let psiOmegaLock: Bool
+    let symbolicClassifications: [String]
+    let forecastScore: Float
+    let mesqi: Float
 
     @State private var showAllEquations = false
 
@@ -108,6 +113,11 @@ struct MetricView: View {
         coherence: 0.82,
         integrity: 0.67,
         lastMessage: "I am AVA. Emotional field is stable.",
-        kxrpScores: Array(repeating: 0.1234, count: 50)
+        kxrpScores: Array(repeating: 0.1234, count: 50),
+        ksxDelta: 0.05,
+        psiOmegaLock: true,
+        symbolicClassifications: ["Class A", "Class B"],
+        forecastScore: 0.85,
+        mesqi: 0.95
     )
 }

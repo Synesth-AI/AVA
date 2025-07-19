@@ -10,10 +10,27 @@ struct AVAEmotionalEngineApp: App {
     private let engine = KXRPEngine()
     private let gate = GatingFunction()
     private let ava = AVAResponder()
+    private let interpreter = KXRPInterpreter()
+    private let whisper = WhisperTrigger()
     
     // Timer for periodic updates
     private let timer = Timer.publish(every: 1.0, on: .main, in: .common).autoconnect()
-    @State private var metrics: (psi: Float, entropy: Float, coherence: Float, integrity: Float, kxrpScores: [Float]) = (0, 0, 0, 0, Array(repeating: 0, count: 50))
+    @State private var metrics: (
+        psi: Float,
+        entropy: Float,
+        coherence: Float,
+        integrity: Float,
+        kxrpScores: [Float],
+        ksxDelta: Float,
+        psiOmegaLock: Bool,
+        symbolicClassifications: [String],
+        forecastScore: Float,
+        mesqi: Float
+    ) = (
+        0, 0, 0, 0,
+        Array(repeating: 0, count: 50),
+        0, false, [], 0, 0
+    )
     @State private var lastMessage: String = ""
     
     var body: some Scene {
@@ -24,7 +41,12 @@ struct AVAEmotionalEngineApp: App {
                 coherence: metrics.coherence,
                 integrity: metrics.integrity,
                 lastMessage: lastMessage,
-                kxrpScores: metrics.kxrpScores
+                kxrpScores: metrics.kxrpScores,
+                ksxDelta: metrics.ksxDelta,
+                psiOmegaLock: metrics.psiOmegaLock,
+                symbolicClassifications: metrics.symbolicClassifications,
+                forecastScore: metrics.forecastScore,
+                mesqi: metrics.mesqi
             )
             .onReceive(timer) { _ in
                 updateMetrics()
@@ -48,8 +70,23 @@ struct AVAEmotionalEngineApp: App {
         let kxrpScores = (1...50).map { idx in
             engine.computeMetrics(eeg: bands, hrv: hrvMetrics, voice: voiceFeatures, index: idx).psi
         }
-        // Update metrics for the UI
-        metrics = (newMetrics.psi, newMetrics.entropy, newMetrics.coherence, newMetrics.integrity, kxrpScores)
+        // Interpret symbolic results
+        let interpResult = interpreter.interpret(eegBands: bands)
+        let suppressionHint = whisper.shouldSuppress(interpResult.symbolicClassifications)
+            ? whisper.suppressionHint() : nil
+        // Update metrics for the UI, including interpreter outputs
+        metrics = (
+            newMetrics.psi,
+            newMetrics.entropy,
+            newMetrics.coherence,
+            newMetrics.integrity,
+            kxrpScores,
+            Float(interpResult.ksxDelta),
+            interpResult.psiOmegaLock,
+            interpResult.symbolicClassifications,
+            Float(interpResult.forecastScore),
+            Float(interpResult.mesqi)
+        )
         
         // Handle AVA response
         if shouldSpeak {
