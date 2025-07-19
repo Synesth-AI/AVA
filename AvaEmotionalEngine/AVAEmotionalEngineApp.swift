@@ -56,13 +56,15 @@ struct AVAEmotionalEngineApp: App {
             .toolbar {
                 ToolbarItem(placement: .bottomBar) {
                     Button("Test AVA Speak") {
+                        // Use current emulated metrics from state
+                        let kxrpDict = Dictionary(uniqueKeysWithValues: metrics.kxrpScores.enumerated().map { (i, v) in (i+1, Double(v)) })
                         ava.respondBasedOnMetrics(
-                            psi: 0.9,
-                            entropy: 0.1,
-                            coherence: 0.8,
-                            integrity: 0.9,
-                            kxrpValues: [1: 0.9],
-                            gating: true
+                            psi: Double(metrics.psi),
+                            entropy: Double(metrics.entropy),
+                            coherence: Double(metrics.coherence),
+                            integrity: Double(metrics.integrity),
+                            kxrpValues: kxrpDict,
+                            gating: gatingEnabled
                         )
                     }
                 }
@@ -104,9 +106,28 @@ struct AVAEmotionalEngineApp: App {
             Float(interpResult.forecastScore),
             Float(interpResult.mesqi)
         )
-        
 
-        
+        // Automatically trigger AVA to speak if the response message changes
+        let kxrpDict = Dictionary(uniqueKeysWithValues: kxrpScores.enumerated().map { (i, v) in (i+1, Double(v)) })
+        let newMessage = ava.generateMessage(
+            psi: Double(newMetrics.psi),
+            entropy: Double(newMetrics.entropy),
+            coherence: Double(newMetrics.coherence),
+            integrity: Double(newMetrics.integrity),
+            kxrpValues: kxrpDict
+        )
+        if newMessage != lastMessage {
+            ava.respondBasedOnMetrics(
+                psi: Double(newMetrics.psi),
+                entropy: Double(newMetrics.entropy),
+                coherence: Double(newMetrics.coherence),
+                integrity: Double(newMetrics.integrity),
+                kxrpValues: kxrpDict,
+                gating: gatingEnabled
+            )
+            lastMessage = newMessage
+        }
+
         // Log to console
         print("Ψ: \(newMetrics.psi), S: \(newMetrics.entropy), C: \(newMetrics.coherence), Ω: \(newMetrics.integrity), G: \(shouldSpeak)")
     }

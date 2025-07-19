@@ -16,7 +16,7 @@ class AVAResponder {
     }
 
     // Expanded: generate dynamic message incorporating KXRP values
-    private func generateMessage(psi: Double, entropy: Double, coherence: Double, integrity: Double, kxrpValues: [Int: Double]) -> String {
+    func generateMessage(psi: Double, entropy: Double, coherence: Double, integrity: Double, kxrpValues: [Int: Double]) -> String {
         // Base responses from core metrics
         if psi > 0.8 && entropy < 0.2 && coherence > 0.7 && integrity > 0.8 {
             return "Emotional field is stable and aligned. You're in a strong, present state."

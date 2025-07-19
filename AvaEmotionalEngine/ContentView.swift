@@ -145,7 +145,7 @@ struct MetricView: View {
                 .font(.headline)
                 .frame(width: 60, alignment: .leading)
             
-            ProgressView(value: Double(value), total: 1.0)
+            ProgressView(value: Double(value), total: 3.0)
                 .progressViewStyle(LinearProgressViewStyle())
             
             Text(String(format: "%.2f", value))
