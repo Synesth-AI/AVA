@@ -12,6 +12,7 @@ struct AVAEmotionalEngineApp: App {
     private let ava = AVAResponder()
     private let interpreter = KXRPInterpreter()
     private let whisper = WhisperTrigger()
+    private let emotionInterpreter = EmotionalInterpreter()
     
     // Timer for periodic updates
     private let timer = Timer.publish(every: 1.0, on: .main, in: .common).autoconnect()
@@ -109,13 +110,9 @@ struct AVAEmotionalEngineApp: App {
 
         // Automatically trigger AVA to speak if the response message changes
         let kxrpDict = Dictionary(uniqueKeysWithValues: kxrpScores.enumerated().map { (i, v) in (i+1, Double(v)) })
-        let newMessage = ava.generateMessage(
-            psi: Double(newMetrics.psi),
-            entropy: Double(newMetrics.entropy),
-            coherence: Double(newMetrics.coherence),
-            integrity: Double(newMetrics.integrity),
-            kxrpValues: kxrpDict
-        )
+        // Use persistent EmotionalInterpreter to get the current phrase
+        let interpResult2 = emotionInterpreter.interpret(entropy: Double(newMetrics.entropy), coherence: Double(newMetrics.coherence), integrity: Double(newMetrics.integrity))
+        let newMessage = interpResult2.phrase
         if newMessage != lastMessage {
             ava.respondBasedOnMetrics(
                 psi: Double(newMetrics.psi),
