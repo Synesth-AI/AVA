@@ -94,6 +94,15 @@ struct AVAEmotionalEngineApp: App {
         let interpResult = interpreter.interpret(eegBands: bands, hrv: hrvMetrics, voice: voiceFeatures)
         let suppressionHint = whisper.shouldSuppress(interpResult.symbolicClassifications)
             ? whisper.suppressionHint() : nil
+        // --- SYMBOLIC MEMORY/WHISPER INTEGRATION ---
+        let eegArray = [bands.alpha, bands.beta, bands.gamma, bands.theta, bands.delta]
+        let hrvValue = hrvMetrics.rmssd
+        let thoughtMirror = ThoughtMirror()
+        let thoughtResult = thoughtMirror.decode(eeg: eegArray, hrv: hrvValue)
+        WhisperReflex.trigger(action: thoughtResult.whisperDecision, reason: "Symbolic check")
+        let symbolicMemory = Codex.get(thoughtResult.classifiers.first ?? "Mother")
+        print("[Symbolic Memory]: \(symbolicMemory)")
+        // --- END SYMBOLIC INTEGRATION ---
         // Update metrics for the UI, including interpreter outputs
         metrics = (
             newMetrics.psi,
@@ -114,14 +123,32 @@ struct AVAEmotionalEngineApp: App {
         let interpResult2 = emotionInterpreter.interpret(entropy: Double(newMetrics.entropy), coherence: Double(newMetrics.coherence), integrity: Double(newMetrics.integrity))
         let newMessage = interpResult2.phrase
         if newMessage != lastMessage {
-            ava.respondBasedOnMetrics(
-                psi: Double(newMetrics.psi),
-                entropy: Double(newMetrics.entropy),
-                coherence: Double(newMetrics.coherence),
-                integrity: Double(newMetrics.integrity),
-                kxrpValues: kxrpDict,
-                gating: gatingEnabled
-            )
+            // --- Symbolic memory enhancement ---
+            if thoughtResult.whisperDecision == .decode && !symbolicMemory.isEmpty {
+                // Speak symbolic memory first, then AVA's normal message
+                ava.speakRaw(message: symbolicMemory)
+                ava.respondBasedOnMetrics(
+                    psi: Double(newMetrics.psi),
+                    entropy: Double(newMetrics.entropy),
+                    coherence: Double(newMetrics.coherence),
+                    integrity: Double(newMetrics.integrity),
+                    kxrpValues: kxrpDict,
+                    gating: gatingEnabled
+                )
+            } else if thoughtResult.whisperDecision == .deferUntilReady {
+                // Suppress AVA speech, show suppression hint
+                print("[Suppressed]: " + (suppressionHint ?? "Symbolic state: output deferred"))
+            } else {
+                // Default: AVA normal speech
+                ava.respondBasedOnMetrics(
+                    psi: Double(newMetrics.psi),
+                    entropy: Double(newMetrics.entropy),
+                    coherence: Double(newMetrics.coherence),
+                    integrity: Double(newMetrics.integrity),
+                    kxrpValues: kxrpDict,
+                    gating: gatingEnabled
+                )
+            }
             lastMessage = newMessage
         }
 

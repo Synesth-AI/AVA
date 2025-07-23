@@ -34,5 +34,15 @@ class AVAResponder {
         synthesizer.speak(utterance)
         print("AVA: \(message)")
     }
+
+    // Public: speak any message in a neutral/soft tone (for symbolic memory)
+    func speakRaw(message: String) {
+        let utterance = AVSpeechUtterance(string: message)
+        utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
+        utterance.rate = 0.48
+        utterance.pitchMultiplier = 1.0
+        synthesizer.speak(utterance)
+        print("AVA (symbolic): \(message)")
+    }
 }
 
