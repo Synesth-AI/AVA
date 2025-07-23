@@ -1,7 +1,20 @@
 import SwiftUI
 
 struct ContentView: View {
-    @EnvironmentObject var viewModel: AVAViewModel
+    // MARK: - Properties
+    let psi: Float
+    let entropy: Float
+    let coherence: Float
+    let integrity: Float
+    let ksxDelta: Float
+    let psiOmegaLock: Bool
+    let symbolicClassifications: [String]
+    let forecastScore: Float
+    let mesqi: Float
+    @Binding var gatingEnabled: Bool
+    let lastMessage: String
+    let kxrpScores: [Float]
+    
     @State private var showAllEquations = false
 
     var body: some View {
@@ -12,36 +25,36 @@ struct ContentView: View {
 
             // Metrics display
             VStack(spacing: 10) {
-                MetricView(label: "Ψ(t):", value: viewModel.psi)
-                MetricView(label: "S(t):", value: viewModel.entropy)
-                MetricView(label: "C(t):", value: viewModel.coherence)
-                MetricView(label: "Ω(t):", value: viewModel.integrity)
+                MetricView(label: "Ψ(t):", value: psi)
+                MetricView(label: "S(t):", value: entropy)
+                MetricView(label: "C(t):", value: coherence)
+                MetricView(label: "Ω(t):", value: integrity)
                 // Interpreter results
                 Divider()
                 HStack {
                     Text("ΔKSX:")
                         .font(.headline)
                     Spacer()
-                    Text(String(format: "%.4f", viewModel.ksxDelta))
+                    Text(String(format: "%.4f", ksxDelta))
                         .font(.body)
                 }
                 HStack {
                     Text("ΨΩ Lock:")
                         .font(.headline)
                     Spacer()
-                    Text(viewModel.psiOmegaLock ? "🔓" : "❌")
+                    Text(psiOmegaLock ? "🔓" : "❌")
                         .font(.body)
                 }
                 // Symbols section: always display, show 'None' if empty
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Symbols:")
                         .font(.headline)
-                    if viewModel.symbolicClassifications.isEmpty {
+                    if symbolicClassifications.isEmpty {
                         Text("None")
                             .font(.caption)
                             .italic()
                     } else {
-                        ForEach(viewModel.symbolicClassifications, id: \.self) { sym in
+                        ForEach(symbolicClassifications, id: \.self) { sym in
                             Text("• \(sym)")
                                 .font(.caption)
                         }
@@ -51,28 +64,28 @@ struct ContentView: View {
                     Text("Forecast:")
                         .font(.headline)
                     Spacer()
-                    Text(String(format: "%.4f", viewModel.forecastScore))
+                    Text(String(format: "%.4f", forecastScore))
                         .font(.body)
                 }
                 HStack {
                     Text("MESQI:")
                         .font(.headline)
                     Spacer()
-                    Text(String(format: "%.4f", viewModel.mesqi))
+                    Text(String(format: "%.4f", mesqi))
                         .font(.body)
                 }
 
-                Text("Gating: \(viewModel.gatingEnabled ? "ON" : "OFF")")
-                    .foregroundColor(viewModel.gatingEnabled ? .green : .red)
+                Text("Gating: \(gatingEnabled ? "ON" : "OFF")")
+                    .foregroundColor(gatingEnabled ? .green : .red)
                     .padding(.top, 10)
-                Toggle("Enable Gating", isOn: $viewModel.gatingEnabled)
+                Toggle("Enable Gating", isOn: $gatingEnabled)
                     .padding(.top, 5)
 
-                if !viewModel.lastMessage.isEmpty {
+                if !lastMessage.isEmpty {
                     Text("Last Message:")
                         .font(.headline)
                         .padding(.top, 10)
-                    Text(viewModel.lastMessage)
+                    Text(lastMessage)
                         .multilineTextAlignment(.center)
                         .padding()
                         .background(Color.blue.opacity(0.1))
@@ -80,7 +93,7 @@ struct ContentView: View {
                 }
 
                 // Toggle and list for 50 equation scores
-                if let kxrpScores = kxrpScores {
+                if !kxrpScores.isEmpty {
                     Toggle("Show All 50 Equation Scores", isOn: $showAllEquations)
                         .padding(.top, 10)
                     if showAllEquations {
@@ -143,13 +156,13 @@ struct MetricView: View {
         entropy: 0.45,
         coherence: 0.82,
         integrity: 0.67,
-        lastMessage: "I am AVA. Emotional field is stable.",
-        kxrpScores: Array(repeating: 0.1234, count: 50),
         ksxDelta: 0.05,
         psiOmegaLock: true,
         symbolicClassifications: ["Class A", "Class B"],
         forecastScore: 0.85,
         mesqi: 0.95,
-        isGatingEnabled: .constant(true)
+        gatingEnabled: .constant(true),
+        lastMessage: "I am AVA. Emotional field is stable.",
+        kxrpScores: Array(repeating: 0.1234, count: 50)
     )
 }

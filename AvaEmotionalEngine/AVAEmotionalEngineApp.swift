@@ -42,14 +42,14 @@ struct AVAEmotionalEngineApp: App {
                 entropy: metrics.entropy,
                 coherence: metrics.coherence,
                 integrity: metrics.integrity,
-                lastMessage: lastMessage,
-                kxrpScores: metrics.kxrpScores,
                 ksxDelta: metrics.ksxDelta,
                 psiOmegaLock: metrics.psiOmegaLock,
                 symbolicClassifications: metrics.symbolicClassifications,
                 forecastScore: metrics.forecastScore,
                 mesqi: metrics.mesqi,
-                isGatingEnabled: $gatingEnabled
+                gatingEnabled: $gatingEnabled,
+                lastMessage: lastMessage,
+                kxrpScores: metrics.kxrpScores
             )
             .onReceive(timer) { _ in
                 updateMetrics()
@@ -135,7 +135,7 @@ struct AVAEmotionalEngineApp: App {
                     kxrpValues: kxrpDict,
                     gating: gatingEnabled
                 )
-            } else if thoughtResult.whisperDecision == .deferUntilReady {
+            } else if thoughtResult.whisperDecision == WhisperAction.deferUntilReady {
                 // Suppress AVA speech, show suppression hint
                 print("[Suppressed]: " + (suppressionHint ?? "Symbolic state: output deferred"))
             } else {
