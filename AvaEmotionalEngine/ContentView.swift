@@ -1,25 +1,8 @@
 import SwiftUI
 
 struct ContentView: View {
-    let psi: Float
-    let entropy: Float
-    let coherence: Float
-    let integrity: Float
-    let lastMessage: String
-    let kxrpScores: [Float]?
-    let ksxDelta: Float
-    let psiOmegaLock: Bool
-    let symbolicClassifications: [String]
-    let forecastScore: Float
-    let mesqi: Float
-
+    @EnvironmentObject var viewModel: AVAViewModel
     @State private var showAllEquations = false
-    @Binding var isGatingEnabled: Bool
-
-    // Determine if gating feature is enabled
-    private var gating: Bool {
-        return isGatingEnabled
-    }
 
     var body: some View {
         VStack(spacing: 20) {
@@ -29,36 +12,36 @@ struct ContentView: View {
 
             // Metrics display
             VStack(spacing: 10) {
-                MetricView(label: "Ψ(t):", value: psi)
-                MetricView(label: "S(t):", value: entropy)
-                MetricView(label: "C(t):", value: coherence)
-                MetricView(label: "Ω(t):", value: integrity)
+                MetricView(label: "Ψ(t):", value: viewModel.psi)
+                MetricView(label: "S(t):", value: viewModel.entropy)
+                MetricView(label: "C(t):", value: viewModel.coherence)
+                MetricView(label: "Ω(t):", value: viewModel.integrity)
                 // Interpreter results
                 Divider()
                 HStack {
                     Text("ΔKSX:")
                         .font(.headline)
                     Spacer()
-                    Text(String(format: "%.4f", ksxDelta))
+                    Text(String(format: "%.4f", viewModel.ksxDelta))
                         .font(.body)
                 }
                 HStack {
                     Text("ΨΩ Lock:")
                         .font(.headline)
                     Spacer()
-                    Text(psiOmegaLock ? "🔓" : "❌")
+                    Text(viewModel.psiOmegaLock ? "🔓" : "❌")
                         .font(.body)
                 }
                 // Symbols section: always display, show 'None' if empty
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Symbols:")
                         .font(.headline)
-                    if symbolicClassifications.isEmpty {
+                    if viewModel.symbolicClassifications.isEmpty {
                         Text("None")
                             .font(.caption)
                             .italic()
                     } else {
-                        ForEach(symbolicClassifications, id: \.self) { sym in
+                        ForEach(viewModel.symbolicClassifications, id: \.self) { sym in
                             Text("• \(sym)")
                                 .font(.caption)
                         }
@@ -68,28 +51,28 @@ struct ContentView: View {
                     Text("Forecast:")
                         .font(.headline)
                     Spacer()
-                    Text(String(format: "%.4f", forecastScore))
+                    Text(String(format: "%.4f", viewModel.forecastScore))
                         .font(.body)
                 }
                 HStack {
                     Text("MESQI:")
                         .font(.headline)
                     Spacer()
-                    Text(String(format: "%.4f", mesqi))
+                    Text(String(format: "%.4f", viewModel.mesqi))
                         .font(.body)
                 }
 
-                Text("Gating: \(gating ? "ON" : "OFF")")
-                    .foregroundColor(gating ? .green : .red)
+                Text("Gating: \(viewModel.gatingEnabled ? "ON" : "OFF")")
+                    .foregroundColor(viewModel.gatingEnabled ? .green : .red)
                     .padding(.top, 10)
-                Toggle("Enable Gating", isOn: $isGatingEnabled)
+                Toggle("Enable Gating", isOn: $viewModel.gatingEnabled)
                     .padding(.top, 5)
 
-                if !lastMessage.isEmpty {
+                if !viewModel.lastMessage.isEmpty {
                     Text("Last Message:")
                         .font(.headline)
                         .padding(.top, 10)
-                    Text(lastMessage)
+                    Text(viewModel.lastMessage)
                         .multilineTextAlignment(.center)
                         .padding()
                         .background(Color.blue.opacity(0.1))

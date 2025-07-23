@@ -5,22 +5,19 @@ class MuseEEGReceiver {
 
     func getBandPowers() -> EEGReading {
         t += 0.1
-        let alpha = 0.5 + 0.1 * sin(t)
-        let beta = 0.2 + 0.05 * cos(t)
-        let gamma = 0.1 + 0.02 * sin(2 * t)
-        let theta = 0.15 + 0.03 * cos(t)
-        // For compatibility with your DataModels, delta is not used directly
-        let alphaThetaPresence = (Double(alpha) + Double(theta)) / 2.0
-        let betaGammaChaos = (Double(beta) + Double(gamma)) / 2.0
+        // Add randomness to each band to trigger more state changes
+        let tDouble = Double(t)
+        let alpha = 0.5 + 0.1 * sin(tDouble) + Double.random(in: -0.15...0.15)
+        let beta = 0.2 + 0.05 * cos(tDouble) + Double.random(in: -0.10...0.10)
+        let gamma = 0.1 + 0.02 * sin(2 * tDouble) + Double.random(in: -0.05...0.05)
+        let theta = 0.15 + 0.03 * cos(tDouble) + Double.random(in: -0.10...0.10)
+        let delta = 0.05 + 0.01 * sin(tDouble) + Double.random(in: -0.02...0.02)
         return EEGReading(
-            alpha: Double(alpha),
-            beta: Double(beta),
-            gamma: Double(gamma),
-            theta: Double(theta),
-            delta: 0.05 + 0.01 * Double(sin(Double(t))),
-            // Computed properties are handled in the struct, but you can pass these for convenience
-            // alphaThetaPresence: alphaThetaPresence,
-            // betaGammaChaos: betaGammaChaos
+            alpha: alpha,
+            beta: beta,
+            gamma: gamma,
+            theta: theta,
+            delta: delta
         )
     }
 }
@@ -30,15 +27,17 @@ class HRVEmulator {
 
     func getMetrics() -> HRVMetrics {
         t += 0.1
-        let rmssd = 0.3 + 0.3 * abs(sin(t))
-        let sdnn = 0.2 + 0.3 * abs(cos(t))
-        let lf = 0.5 + 0.2 * sin(2 * t)
-        let hf = 0.5 + 0.2 * cos(2 * t)
+        // Add randomness to HRV metrics
+        let tDouble = Double(t)
+        let rmssd = 0.3 + 0.3 * abs(sin(tDouble)) + Double.random(in: -0.15...0.15)
+        let sdnn = 0.2 + 0.3 * abs(cos(tDouble)) + Double.random(in: -0.10...0.10)
+        let lf = 0.5 + 0.2 * sin(2 * tDouble) + Double.random(in: -0.10...0.10)
+        let hf = 0.5 + 0.2 * cos(2 * tDouble) + Double.random(in: -0.10...0.10)
         return HRVMetrics(
-            sdnn: Double(sdnn),
-            rmssd: Double(rmssd),
-            lf: Double(lf),
-            hf: Double(hf)
+            sdnn: sdnn,
+            rmssd: rmssd,
+            lf: lf,
+            hf: hf
         )
     }
 }
@@ -48,19 +47,20 @@ class VoiceFeatureExtractor {
 
     func getFeatures() -> VoiceFeatures {
         t += 0.1
-        let jitter = 0.01 + 0.01 * abs(sin(t))
-        let shimmer = 0.02 + 0.01 * abs(cos(t))
-        let hnr = 0.7 + 0.2 * sin(t)
-        let pauseCount = Int(3 + 2 * sin(t))
-        let speakingRate = Double(120.0 + 30.0 * cos(t))
-        let facialConsistencyScore = 0.7 + 0.2 * abs(sin(t))
+        let tDouble = Double(t)
+        let jitter = 0.01 + 0.01 * abs(sin(tDouble))
+        let shimmer = 0.02 + 0.01 * abs(cos(tDouble))
+        let hnr = 0.7 + 0.2 * sin(tDouble)
+        let pauseCount = Int(3 + 2 * sin(tDouble))
+        let speakingRate = 120.0 + 30.0 * cos(tDouble)
+        let facialConsistencyScore = 0.7 + 0.2 * abs(sin(tDouble))
         return VoiceFeatures(
-            jitter: Double(jitter),
-            shimmer: Double(shimmer),
-            hnr: Double(hnr),
+            jitter: jitter,
+            shimmer: shimmer,
+            hnr: hnr,
             pauseCount: pauseCount,
             speakingRate: speakingRate,
-            facialConsistencyScore: Double(facialConsistencyScore)
+            facialConsistencyScore: facialConsistencyScore
         )
     }
 }
