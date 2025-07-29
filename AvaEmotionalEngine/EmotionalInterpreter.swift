@@ -31,7 +31,7 @@ class EmotionalInterpreter {
     private var lastEntropy: Double = 0.0
     private var lastCoherence: Double = 0.0
     private let aiResponseGenerator = AIResponseGenerator()
-    private var conversationHistory: [String] = []
+    var conversationHistory: [String] = []
     
     /// Interprets the emotional state and generates a response using AI
     /// - Parameters:

@@ -9,10 +9,23 @@ struct AVAEmotionalEngineApp: App {
     private let voiceExtractor = VoiceFeatureExtractor()
     private let engine = KXRPEngine()
     private let gate = GatingFunction()
-    private let ava = AVAResponder()
     private let interpreter = KXRPInterpreter()
     private let whisper = WhisperTrigger()
     private let emotionInterpreter = EmotionalInterpreter()
+    
+    // Initialize AI components with API key from environment variables
+    private let aiGenerator = AIResponseGenerator(
+        cloudAPIKey: ProcessInfo.processInfo.environment["OPENAI_API_KEY"] ?? ""
+    )
+    
+    init() {
+        // Initialize AVA with the AI generator
+        self.ava = AVAResponder(aiGenerator: aiGenerator)
+        print("AVAEmotionalEngine: Initializing with AI generator")
+    }
+    
+    // Initialize AVA with the AI generator
+    private let ava: AVAResponder
     
     // Timer for periodic updates
     private let timer = Timer.publish(every: 1.0, on: .main, in: .common).autoconnect()
