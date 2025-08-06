@@ -1,27 +1,60 @@
 import Foundation
+import MuseSDK
 
-class MuseEEGReceiver {
-    private var t: Float = 0.0
+/// Wrapper for Muse 2 headband using MuseSDK
+class MuseEEGReceiver: NSObject, IXNMuseDelegate, IXNMuseConnectionListener {
+    private var latestAlpha: Double = 0.0
+    private var latestBeta: Double = 0.0
+    private var latestGamma: Double = 0.0
+    private var latestTheta: Double = 0.0
+    private var latestDelta: Double = 0.0
+    private var muse: IXNMuse?
 
+    override init() {
+        super.init()
+        // Initialize and configure Muse SDK
+        IXNMuse.initMuseSDK()
+        IXNMuse.startListening(forConnections: self)
+    }
+
+    /// Returns the most recent band powers received from the Muse device
     func getBandPowers() -> EEGReading {
-        t += 0.1
-        let alpha = 0.5 + 0.1 * sin(t)
-        let beta = 0.2 + 0.05 * cos(t)
-        let gamma = 0.1 + 0.02 * sin(2 * t)
-        let theta = 0.15 + 0.03 * cos(t)
-        // For compatibility with your DataModels, delta is not used directly
-        let alphaThetaPresence = (Double(alpha) + Double(theta)) / 2.0
-        let betaGammaChaos = (Double(beta) + Double(gamma)) / 2.0
         return EEGReading(
-            alpha: Double(alpha),
-            beta: Double(beta),
-            gamma: Double(gamma),
-            theta: Double(theta),
-            delta: 0.05 + 0.01 * Double(sin(Double(t))),
-            // Computed properties are handled in the struct, but you can pass these for convenience
-            // alphaThetaPresence: alphaThetaPresence,
-            // betaGammaChaos: betaGammaChaos
+            alpha: latestAlpha,
+            beta: latestBeta,
+            gamma: latestGamma,
+            theta: latestTheta,
+            delta: latestDelta
         )
+    }
+
+    // MARK: - IXNMuseConnectionListener
+    func muse(_ muse: IXNMuse, connectionDidChange state: IXNMuseConnectionState) {
+        if state == .connected {
+            self.muse = muse
+            muse.register(self)
+            // Subscribe to band power data
+            muse.enableBandpower(on: .alpha)
+            muse.enableBandpower(on: .beta)
+            muse.enableBandpower(on: .gamma)
+            muse.enableBandpower(on: .theta)
+            muse.enableBandpower(on: .delta)
+            muse.start()
+        }
+    }
+
+    // MARK: - IXNMuseDelegate
+    func muse(_ muse: IXNMuse, didReceivePacket packet: IXNMuseDataPacket) {
+        guard packet.packetType == .bandpower else { return }
+        // packet.values: [delta, theta, alpha, beta, gamma]
+        let values = packet.values
+        if values.count >= 5 {
+            latestDelta = values[0]
+            latestTheta = values[1]
+            latestAlpha = values[2]
+            latestBeta = values[3]
+            latestGamma = values[4]
+        }
     }
 }
 
