@@ -139,22 +139,7 @@ struct AVAEmotionalEngineApp: App {
                     self.updateMetrics()
                 }
             }
-            .toolbar {
-                ToolbarItem(placement: .bottomBar) {
-                    Button("Test AVA Speak") {
-                        // Use current emulated metrics from state
-                        let kxrpDict = Dictionary(uniqueKeysWithValues: metrics.kxrpScores.enumerated().map { (i, v) in (i+1, Double(v)) })
-                        ava.respondBasedOnMetrics(
-                            psi: Double(metrics.psi),
-                            entropy: Double(metrics.entropy),
-                            coherence: Double(metrics.coherence),
-                            integrity: Double(metrics.integrity),
-                            kxrpValues: kxrpDict,
-                            gating: gatingEnabled
-                        )
-                    }
-                }
-            }
+
         }
     }
     

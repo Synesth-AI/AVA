@@ -1,5 +1,16 @@
 import SwiftUI
 
+// Onboarding page model
+struct OnboardingPage: Identifiable {
+    let id = UUID()
+    let title: String
+    let subtitle: String
+    let imageName: String
+    let showButton: Bool
+    var buttonTitle: String? = nil
+    var buttonAction: (() -> Void)? = nil
+}
+
 // Helper extension to create Color from hex string
 extension Color {
     init(hex: String) {
@@ -126,8 +137,9 @@ struct OnboardingView: View {
                         
                         TextField("Your name", text: $nameInput)
                             .onChange(of: nameInput) { newValue in
-                                // Only allow letters and spaces, with a max length of 30 characters
-                                let filtered = newValue.filter { $0.isLetter || $0.isWhitespace }
+                                // Allow letters, spaces, and apostrophes in names
+                                let allowedCharacters = CharacterSet.letters.union(.whitespaces).union(CharacterSet(charactersIn: "'-"))
+                                let filtered = String(newValue.unicodeScalars.filter { allowedCharacters.contains($0) })
                                 if filtered != newValue {
                                     nameInput = filtered
                                 }
@@ -135,11 +147,14 @@ struct OnboardingView: View {
                                 if nameInput.count > 30 {
                                     nameInput = String(nameInput.prefix(30))
                                 }
+                                // Clear any previous error when typing
+                                showNameError = false
+                                
                                 // Update appState when valid
-                                if !nameInput.trimmingCharacters(in: .whitespaces).isEmpty {
-                                    appState.userName = nameInput.trimmingCharacters(in: .whitespaces)
+                                let trimmedName = nameInput.trimmingCharacters(in: .whitespacesAndNewlines)
+                                if !trimmedName.isEmpty {
+                                    appState.userName = trimmedName
                                 }
-                                showNameError = nameInput.trimmingCharacters(in: .whitespaces).isEmpty
                             }
                             .padding()
                             .background(Color(.systemGray6))
@@ -148,7 +163,7 @@ struct OnboardingView: View {
                             .padding(.bottom, 8)
                         
                         if showNameError {
-                            Text("Please enter a valid name")
+                            Text(hasAgreedToTerms ? "Please enter a valid name" : "Please accept the terms and conditions")
                                 .font(.system(size: 14, weight: .regular))
                                 .foregroundColor(.red)
                                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -170,182 +185,210 @@ struct OnboardingView: View {
                 // Next/Get Started button
                 Button(action: {
                     if currentPage < pages.count - 1 {
-                        withAnimation {
+                        withAnimation(.easeInOut(duration: 0.3)) {
                             currentPage += 1
                         }
                     } else {
                         // Validate name and terms agreement on last screen before proceeding
-                        let trimmedName = nameInput.trimmingCharacters(in: .whitespaces)
-                        if trimmedName.isEmpty {
+                        let trimmedName = nameInput.trimmingCharacters(in: .whitespacesAndNewlines)
+                        
+                        // Clear any previous errors
+                        showNameError = false
+                        
+                        // Validate name
+                        if trimmedName.isEmpty || trimmedName.count < 2 {
                             showNameError = true
-                        } else if !hasAgreedToTerms {
-                            // Show error for terms not agreed
-                            showNameError = false
-                        } else {
-                            appState.userName = trimmedName
-                            withAnimation {
-                                appState.hasCompletedOnboarding = true
-                            }
+                            return
+                        }
+                        
+                        // Validate terms agreement
+                        if !hasAgreedToTerms {
+                            showNameError = true
+                            return
+                        }
+                        
+                        // Save the name and complete onboarding
+                        appState.userName = trimmedName
+                        // Don't mark device setup as complete yet
+                        appState.hasCompletedDeviceSetup = false
+                        
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            appState.hasCompletedOnboarding = true
+                            // Save the state
+                            UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
+                            UserDefaults.standard.set(trimmedName, forKey: "userName")
+                            UserDefaults.standard.set(false, forKey: "hasCompletedDeviceSetup")
                         }
                     }
                 }) {
-                    HStack(spacing: 8) {
-                        Text(currentPage == pages.count - 1 ? "Get Started" : "Next")
-                            .font(.headline)
-                        
-                        Image(systemName: "arrow.right")
-                            .font(.system(size: 14, weight: .semibold))
-                    }
-                    .foregroundColor(.white)
-                    .padding()
-                    .frame(maxWidth: .infinity)
-                    .background(Color(hex: "#2E69C3"))
-                    .cornerRadius(12)
-                    .padding(.horizontal, 40)
-                    .padding(.top, 10)
-                    
-                    // Privacy terms checkbox (only on last screen)
-                    if currentPage == pages.count - 1 {
-                        HStack(spacing: 12) {
-                            Button(action: {
-                                withAnimation {
-                                    hasAgreedToTerms.toggle()
-                                }
-                            }) {
-                                Image(systemName: hasAgreedToTerms ? "checkmark.square.fill" : "square")
-                                    .foregroundColor(hasAgreedToTerms ? Color(hex: "#2E69C3") : .gray)
-                                    .font(.system(size: 20))
-                            }
+                    VStack(spacing: 0) {
+                        HStack(spacing: 8) {
+                            Text(currentPage == pages.count - 1 ? "Get Started" : "Next")
+                                .font(.headline)
                             
-                            HStack(spacing: 4) {
-                                Text("I agree to the")
-                                    .font(.system(size: 14))
-                                    .foregroundColor(Color(red: 0.27, green: 0.33, blue: 0.36))
-                                
-                                Button(action: {
-                                    // TODO: Show privacy policy
-                                }) {
-                                    Text("Privacy Policy")
-                                        .font(.system(size: 14, weight: .semibold))
-                                        .foregroundColor(Color(hex: "#2E69C3"))
+                            Image(systemName: "arrow.right")
+                                .font(.system(size: 14, weight: .semibold))
+                        }
+                        .foregroundColor(.white)
+                        .padding()
+                        .frame(maxWidth: .infinity)
+                        .background(Color(hex: "#2E69C3"))
+                        .cornerRadius(12)
+                        .padding(.horizontal, 40)
+                        .padding(.top, 20)
+                        
+                        // Privacy terms checkbox (only on last screen)
+                        if currentPage == pages.count - 1 {
+                            VStack(spacing: 10) {
+                                HStack(alignment: .top, spacing: 12) {
+                                    Button(action: {
+                                        withAnimation(.easeInOut(duration: 0.2)) {
+                                            hasAgreedToTerms.toggle()
+                                            showNameError = false // Clear error when toggling checkbox
+                                        }
+                                    }) {
+                                        Image(systemName: hasAgreedToTerms ? "checkmark.square.fill" : "square")
+                                            .foregroundColor(hasAgreedToTerms ? Color(hex: "#2E69C3") : .gray)
+                                            .font(.system(size: 20))
+                                            .padding(.top, 2)
+                                    }
+                                    
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text("By continuing, you agree to our")
+                                            .font(.system(size: 14))
+                                            .foregroundColor(Color(red: 0.27, green: 0.33, blue: 0.36))
+                                        
+                                        HStack(spacing: 4) {
+                                            Button(action: {
+                                                // Show privacy policy in a sheet or web view
+                                                if let url = URL(string: "https://www.yourapp.com/privacy") {
+                                                    UIApplication.shared.open(url)
+                                                }
+                                            }) {
+                                                Text("Privacy Policy")
+                                                    .font(.system(size: 14, weight: .semibold))
+                                                    .foregroundColor(Color(hex: "#2E69C3"))
+                                            }
+                                            
+                                            Text("and")
+                                                .font(.system(size: 14))
+                                                .foregroundColor(Color(red: 0.27, green: 0.33, blue: 0.36))
+                                            
+                                            Button(action: {
+                                                // Show terms of service in a sheet or web view
+                                                if let url = URL(string: "https://www.yourapp.com/terms") {
+                                                    UIApplication.shared.open(url)
+                                                }
+                                            }) {
+                                                Text("Terms of Service")
+                                                    .font(.system(size: 14, weight: .semibold))
+                                                    .foregroundColor(Color(hex: "#2E69C3"))
+                                            }
+                                        }
+                                        .multilineTextAlignment(.leading)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                    }
                                 }
-                                
-                                Text("and")
-                                    .font(.system(size: 14))
-                                    .foregroundColor(Color(red: 0.27, green: 0.33, blue: 0.36))
-                                
-                                Button(action: {
-                                    // TODO: Show terms of service
-                                }) {
-                                    Text("Terms of Service")
-                                        .font(.system(size: 14, weight: .semibold))
-                                        .foregroundColor(Color(hex: "#2E69C3"))
+                                .padding(.horizontal, 40)
+                                .padding(.bottom, 30)
+                                .opacity(isAnimating ? 1 : 0)
+                                .offset(y: isAnimating ? 0 : 10)
+                                .onAppear {
+                                    withAnimation(.easeOut(duration: 0.3).delay(0.2)) {
+                                        isAnimating = true
+                                    }
                                 }
                             }
-                            .multilineTextAlignment(.leading)
-                            .fixedSize(horizontal: false, vertical: true)
+                        } else {
+                            Spacer()
+                                .frame(height: 30)
+                                .padding(.bottom, 30)
                         }
-                        .padding(.horizontal, 40)
-                        .padding(.bottom, 30)
-                        .opacity(isAnimating ? 1 : 0)
-                        .offset(y: isAnimating ? 0 : 10)
-                    } else {
-                        Spacer()
-                            .frame(height: 30)
-                            .padding(.bottom, 30)
                     }
                 }
             }
         }
     }
-}
-
-struct OnboardingPage: Identifiable {
-    let id = UUID()
-    let title: String
-    let subtitle: String
-    let imageName: String
-    let showButton: Bool
-}
-
-struct OnboardingPageView: View {
-    @EnvironmentObject var appState: AppState
-    let page: OnboardingPage
-    let currentPage: Int
-    @State private var isAnimating = false
     
-    var body: some View {
-        VStack(spacing: 0) {
-            // Logo at the top (shown on all screens)
-            Image("AppLogo")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 200, height: 200)
-                .padding(.top, 10)
-                .padding(.bottom, 5)
-            
-            // Main content area with consistent layout
+    struct OnboardingPageView: View {
+        @EnvironmentObject var appState: AppState
+        let page: OnboardingPage
+        let currentPage: Int
+        @State private var isAnimating = false
+        
+        var body: some View {
             VStack(spacing: 0) {
-                // For first screen, show the image in the content area
-                if currentPage == 0 {
-                    Image("Onboarding1")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(maxWidth: 500, maxHeight: 500)
-                        .padding(.top, 0)
-                        .padding(.bottom, 24)
-                }
+                // Logo at the top (shown on all screens)
+                Image("AppLogo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 200, height: 200)
+                    .padding(.top, 10)
+                    .padding(.bottom, 5)
                 
-                // Title and Subtitle - consistent across all screens
-                VStack(spacing: 16) {
-                    Text(page.title)
-                        .font(.system(size: 28, weight: .bold))
-                        .foregroundColor(Color(red: 0.27, green: 0.33, blue: 0.36))
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 40)
+                // Main content area with consistent layout
+                VStack(spacing: 0) {
+                    // For first screen, show the image in the content area
+                    if currentPage == 0 {
+                        Image("Onboarding1")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(maxWidth: 500, maxHeight: 500)
+                            .padding(.top, 0)
+                            .padding(.bottom, 24)
+                    }
                     
-                    Text(page.subtitle)
-                        .font(.system(size: 16, weight: .regular))
-                        .foregroundColor(Color(red: 0.27, green: 0.33, blue: 0.36).opacity(0.8))
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 40)
+                    // Title and Subtitle - consistent across all screens
+                    VStack(spacing: 16) {
+                        Text(page.title)
+                            .font(.system(size: 28, weight: .bold))
+                            .foregroundColor(Color(red: 0.27, green: 0.33, blue: 0.36))
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 40)
+                        
+                        Text(page.subtitle)
+                            .font(.system(size: 16, weight: .regular))
+                            .foregroundColor(Color(red: 0.27, green: 0.33, blue: 0.36).opacity(0.8))
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 40)
+                    }
+                    .opacity(isAnimating ? 1 : 0)
+                    .offset(y: isAnimating ? 0 : 20)
+                    .frame(maxHeight: .infinity, alignment: .center) // Centered for all screens
+                    
+                    // Spacer to push content up if needed
+                    Spacer()
                 }
-                .opacity(isAnimating ? 1 : 0)
-                .offset(y: isAnimating ? 0 : 20)
-                .frame(maxHeight: .infinity, alignment: .center) // Centered for all screens
-                
-                // Spacer to push content up if needed
-                Spacer()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-        }
-        .onAppear {
-            withAnimation(.easeOut(duration: 0.5)) {
-                isAnimating = true
+            .onAppear {
+                withAnimation(.easeOut(duration: 0.5)) {
+                    isAnimating = true
+                }
             }
         }
     }
-}
-
-struct PageControl: View {
-    let numberOfPages: Int
-    @Binding var currentPage: Int
     
-    var body: some View {
-        HStack(spacing: 8) {
-            ForEach(0..<numberOfPages, id: \.self) { index in
-                Capsule()
-                    .fill(currentPage == index ? Color(red: 0.88, green: 0.44, blue: 0.56) : Color.gray.opacity(0.3))
-                    .frame(width: currentPage == index ? 24 : 8, height: 8)
-                    .animation(.easeInOut, value: currentPage)
+    struct PageControl: View {
+        let numberOfPages: Int
+        @Binding var currentPage: Int
+        
+        var body: some View {
+            HStack(spacing: 8) {
+                ForEach(0..<numberOfPages, id: \.self) { index in
+                    Capsule()
+                        .fill(currentPage == index ? Color(red: 0.88, green: 0.44, blue: 0.56) : Color.gray.opacity(0.3))
+                        .frame(width: currentPage == index ? 24 : 8, height: 8)
+                        .animation(.easeInOut, value: currentPage)
+                }
             }
         }
     }
-}
-
-struct OnboardingView_Previews: PreviewProvider {
-    static var previews: some View {
-        OnboardingView()
-            .environmentObject(AppState())
+    
+    struct OnboardingView_Previews: PreviewProvider {
+        static var previews: some View {
+            OnboardingView()
+                .environmentObject(AppState())
+        }
     }
 }

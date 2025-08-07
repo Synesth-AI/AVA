@@ -12,7 +12,18 @@ class AppState: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     
     init() {
-        // Initialize with default values
+        // Check if this is the first launch after install/clean build
+        let hasLaunchedBefore = UserDefaults.standard.bool(forKey: "hasLaunchedBefore")
+        
+        if !hasLaunchedBefore {
+            // Reset all onboarding states for first launch
+            UserDefaults.standard.set(true, forKey: "hasLaunchedBefore")
+            UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
+            UserDefaults.standard.set(false, forKey: "hasCompletedDeviceSetup")
+            UserDefaults.standard.set("", forKey: "userName")
+        }
+        
+        // Initialize with values from UserDefaults
         _isSplashActive = Published(initialValue: true)
         _hasCompletedOnboarding = Published(initialValue: UserDefaults.standard.bool(forKey: "hasCompletedOnboarding"))
         _userName = Published(initialValue: UserDefaults.standard.string(forKey: "userName") ?? "")

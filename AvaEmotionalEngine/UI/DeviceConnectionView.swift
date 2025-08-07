@@ -25,7 +25,7 @@ struct DeviceConnectionView: View {
                 // Muse Headband Card
                 DeviceCard(
                     title: "Muse Headband",
-                    description: "Connect your Muse headband to track your brain activity and heart rate variability (HRV).",
+                    description: "Connect your Muse headband to track your brain activity.",
                     buttonTitle: "Connect",
                     buttonAction: {
                         // TODO: Implement Muse connection
