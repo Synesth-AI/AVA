@@ -21,7 +21,7 @@ struct DeviceConnectionView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 24)
-            .padding(.top, 40)
+            .padding(.top, 80) 
             .padding(.bottom, 40)
             
             // Main content with device card
