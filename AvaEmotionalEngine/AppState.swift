@@ -12,22 +12,16 @@ class AppState: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     
     init() {
-        // Check if this is the first launch after install/clean build
-        let hasLaunchedBefore = UserDefaults.standard.bool(forKey: "hasLaunchedBefore")
+        // Reset all onboarding states on every launch
+        UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
+        UserDefaults.standard.set(false, forKey: "hasCompletedDeviceSetup")
+        UserDefaults.standard.set("", forKey: "userName")
         
-        if !hasLaunchedBefore {
-            // Reset all onboarding states for first launch
-            UserDefaults.standard.set(true, forKey: "hasLaunchedBefore")
-            UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
-            UserDefaults.standard.set(false, forKey: "hasCompletedDeviceSetup")
-            UserDefaults.standard.set("", forKey: "userName")
-        }
-        
-        // Initialize with values from UserDefaults
+        // Initialize with default values (onboarding not completed)
         _isSplashActive = Published(initialValue: true)
-        _hasCompletedOnboarding = Published(initialValue: UserDefaults.standard.bool(forKey: "hasCompletedOnboarding"))
-        _userName = Published(initialValue: UserDefaults.standard.string(forKey: "userName") ?? "")
-        _hasCompletedDeviceSetup = Published(initialValue: UserDefaults.standard.bool(forKey: "hasCompletedDeviceSetup"))
+        _hasCompletedOnboarding = Published(initialValue: false)
+        _userName = Published(initialValue: "")
+        _hasCompletedDeviceSetup = Published(initialValue: false)
         _isLogoAnimating = Published(initialValue: false)
         
         // Set up property observers

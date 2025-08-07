@@ -2,66 +2,137 @@ import SwiftUI
 
 struct DeviceConnectionView: View {
     @EnvironmentObject var appState: AppState
+    @State private var isMuseConnected = false
+    @State private var showDeviceSelection = false
     
     var body: some View {
         VStack(spacing: 0) {
             // Header with greeting
-            VStack(spacing: 16) {
+            VStack(alignment: .leading, spacing: 16) {
                 Text("Hi \(appState.userName)")
                     .font(.system(size: 28, weight: .bold))
                     .foregroundColor(Color(red: 0.27, green: 0.33, blue: 0.36))
                 
-                Text("Let's get you set up with your devices")
+                Text("Let's get you set up with your Muse headband")
                     .font(.system(size: 16))
                     .foregroundColor(Color(red: 0.27, green: 0.33, blue: 0.36).opacity(0.8))
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 40)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 24)
             .padding(.top, 40)
             .padding(.bottom, 40)
             
-            // Device connection cards
-            VStack(spacing: 20) {
-                // Muse Headband Card
+            // Main content with device card
+            VStack(spacing: 0) {
+                // Device connection card
                 DeviceCard(
                     title: "Muse Headband",
                     description: "Connect your Muse headband to track your brain activity.",
-                    buttonTitle: "Connect",
+                    buttonTitle: isMuseConnected ? "Connected" : "Connect",
                     buttonAction: {
-                        // TODO: Implement Muse connection
+                        if !isMuseConnected {
+                            showDeviceSelection = true
+                        }
                     },
-                    iconName: "brain.head.profile"
+                    iconName: "MuseIcon"
                 )
+                .padding(.horizontal, 24)
                 
-                // Apple Watch Card
-                DeviceCard(
-                    title: "Apple Watch",
-                    description: "Connect your Apple Watch to track your heart rate and other health metrics.",
-                    buttonTitle: "Connect",
-                    buttonAction: {
-                        // TODO: Implement Apple Watch connection
-                    },
-                    iconName: "applewatch"
-                )
+                Spacer()
                 
-                // Skip for now button
+                // Tips section
+                VStack(spacing: 12) {
+                    VStack(spacing: 4) {
+                        Text("Make sure Bluetooth is enabled")
+                            .font(.system(size: 12))
+                            .foregroundColor(Color(red: 0.27, green: 0.33, blue: 0.36).opacity(0.7))
+                            .multilineTextAlignment(.center)
+                        Text("Keep your Muse headband close during pairing")
+                            .font(.system(size: 12))
+                            .foregroundColor(Color(red: 0.27, green: 0.33, blue: 0.36).opacity(0.7))
+                            .multilineTextAlignment(.center)
+                        Text("Ensure Muse headband is charged")
+                            .font(.system(size: 12))
+                            .foregroundColor(Color(red: 0.27, green: 0.33, blue: 0.36).opacity(0.7))
+                            .multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity)
+                    
+                    // Skip for now button
+                    Button(action: {
+                        withAnimation {
+                            appState.hasCompletedDeviceSetup = true
+                        }
+                    }) {
+                        Text("I'll do this later")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundColor(Color(hex: "#2E69C3"))
+                    }
+                    .padding(.top, 10)
+                }
+                .padding(.bottom, 40) // Space between tips and continue button
+                
+                // Continue button
                 Button(action: {
                     withAnimation {
                         appState.hasCompletedDeviceSetup = true
                     }
                 }) {
-                    Text("I'll do this later")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(Color(hex: "#2E69C3"))
-                        .padding(.top, 20)
+                    HStack(spacing: 8) {
+                        Text(isMuseConnected ? "Continue" : "Connect Your Device")
+                            .font(.headline)
+                        
+                        if isMuseConnected {
+                            Image(systemName: "arrow.right")
+                                .font(.system(size: 14, weight: .semibold))
+                        }
+                    }
+                    .foregroundColor(.white)
+                    .padding()
+                    .frame(maxWidth: .infinity)
+                    .background(isMuseConnected ? Color(red: 0.18, green: 0.41, blue: 0.77) : Color.gray.opacity(0.5))
+                    .cornerRadius(12)
                 }
+                .disabled(!isMuseConnected)
+                .animation(.easeInOut, value: isMuseConnected)
+                .padding(.horizontal, 24)
+                .padding(.bottom, 30)
             }
-            .padding(.horizontal, 24)
-            
-            Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.white)
+        .edgesIgnoringSafeArea(.all)
+        // Full screen overlay for device selection
+        .overlay(
+            Group {
+                if showDeviceSelection {
+                    ZStack {
+                        // Blurred background
+                        Color.black.opacity(0.3)
+                            .edgesIgnoringSafeArea(.all)
+                            .onTapGesture {
+                                withAnimation(.easeInOut) {
+                                    showDeviceSelection = false
+                                }
+                            }
+                        
+                        // Device selection view
+                        DeviceSelectionView(isPresented: $showDeviceSelection) { selectedDevice in
+                            // Handle device selection
+                            withAnimation(.easeInOut) {
+                                isMuseConnected = true
+                                showDeviceSelection = false
+                            }
+                        }
+                        .transition(.scale(scale: 0.95).combined(with: .opacity))
+                    }
+                    .transition(.opacity)
+                    .zIndex(1)
+                }
+            }
+        )
     }
 }
 
@@ -74,13 +145,13 @@ struct DeviceCard: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            HStack(spacing: 12) {
-                Image(systemName: iconName)
-                    .font(.system(size: 24))
-                    .foregroundColor(Color(hex: "#2E69C3"))
+            // Icon and text in a row
+            HStack(alignment: .top, spacing: 12) {
+                Image(iconName)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
                     .frame(width: 48, height: 48)
-                    .background(Color(hex: "#2E69C3").opacity(0.1))
-                    .clipShape(Circle())
+                    .cornerRadius(4)
                 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title)
@@ -94,24 +165,28 @@ struct DeviceCard: View {
                 }
                 
                 Spacer()
-                
-                Button(action: buttonAction) {
-                    Text(buttonTitle)
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                        .background(Color(hex: "#2E69C3"))
-                        .cornerRadius(16)
-                }
             }
-            .padding(16)
-            .background(Color.white)
-            .cornerRadius(12)
-            .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
+            
+            // Connect button
+            Button(action: buttonAction) {
+                Text(buttonTitle)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .background(Color(red: 0.18, green: 0.41, blue: 0.77))
+                    .cornerRadius(8)
+            }
+            .padding(.top, 4)
+        }
+        .padding(16)
+        .background(Color.white)
+        .cornerRadius(12)
+        .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
         }
     }
-}
+
 
 struct DeviceConnectionView_Previews: PreviewProvider {
     static var previews: some View {
