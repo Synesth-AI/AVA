@@ -6,6 +6,7 @@ class AppState: ObservableObject {
     @Published var hasCompletedOnboarding: Bool
     @Published var userName: String
     @Published var hasCompletedDeviceSetup: Bool
+    @Published var hasCompletedPermissionsSetup: Bool
     @Published var isLogoAnimating: Bool
     
     // Property observers for UserDefaults persistence
@@ -15,6 +16,7 @@ class AppState: ObservableObject {
         // Reset all onboarding states on every launch
         UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
         UserDefaults.standard.set(false, forKey: "hasCompletedDeviceSetup")
+        UserDefaults.standard.set(false, forKey: "hasCompletedPermissionsSetup")
         UserDefaults.standard.set("", forKey: "userName")
         
         // Initialize with default values (onboarding not completed)
@@ -22,6 +24,7 @@ class AppState: ObservableObject {
         _hasCompletedOnboarding = Published(initialValue: false)
         _userName = Published(initialValue: "")
         _hasCompletedDeviceSetup = Published(initialValue: false)
+        _hasCompletedPermissionsSetup = Published(initialValue: false)
         _isLogoAnimating = Published(initialValue: false)
         
         // Set up property observers
@@ -46,6 +49,14 @@ class AppState: ObservableObject {
             .sink { [weak self] value in
                 guard let self = self else { return }
                 UserDefaults.standard.set(value, forKey: "hasCompletedDeviceSetup")
+            }
+            .store(in: &cancellables)
+            
+        $hasCompletedPermissionsSetup
+            .dropFirst()
+            .sink { [weak self] value in
+                guard let self = self else { return }
+                UserDefaults.standard.set(value, forKey: "hasCompletedPermissionsSetup")
             }
             .store(in: &cancellables)
     }

@@ -77,6 +77,7 @@ struct DeviceConnectionView: View {
                 // Continue button
                 Button(action: {
                     withAnimation {
+                        // This will trigger the navigation to PermissionsView in the main app
                         appState.hasCompletedDeviceSetup = true
                     }
                 }) {
@@ -175,7 +176,7 @@ struct DeviceCard: View {
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
                     .frame(maxWidth: .infinity, alignment: .center)
-                    .background(Color(red: 0.18, green: 0.41, blue: 0.77))
+                    .background(buttonTitle == "Connected" ? Color(hex: "#2EC360") : Color(red: 0.18, green: 0.41, blue: 0.77))
                     .cornerRadius(8)
             }
             .padding(.top, 4)

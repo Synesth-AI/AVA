@@ -108,6 +108,9 @@ struct AVAEmotionalEngineApp: App {
                 } else if !appState.hasCompletedDeviceSetup {
                     DeviceConnectionView()
                         .environmentObject(appState)
+                } else if !appState.hasCompletedPermissionsSetup {
+                    PermissionsView()
+                        .environmentObject(appState)
                 } else {
                     ContentView(
                         psi: metrics.psi,
