@@ -1,9 +1,15 @@
 import SwiftUI
+import HealthKit
+import UIKit
 
 struct PermissionsView: View {
     @EnvironmentObject var appState: AppState
     @State private var microphoneEnabled = false
     @State private var speechRecognitionEnabled = false
+    @State private var showingHealthKitAlert = false
+    @State private var healthKitError: String? = nil
+    private let healthKitManager = HealthKitManager.shared
+    @State private var healthKitEnabled = false
     @State private var notificationsEnabled = false
     @State private var homeKitEnabled = false
     
@@ -33,7 +39,16 @@ struct PermissionsView: View {
                     title: "Health Kit",
                     description: "To access your health data for better insights",
                     iconName: "health_icon",
-                    isOn: $speechRecognitionEnabled
+                    isOn: Binding(
+                        get: { self.healthKitEnabled },
+                        set: { newValue in
+                            if newValue {
+                                self.requestHealthKitAccess()
+                            } else {
+                                self.healthKitEnabled = false
+                            }
+                        }
+                    )
                 )
                 
                 PermissionRow(
@@ -84,6 +99,18 @@ struct PermissionsView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .alert(isPresented: $showingHealthKitAlert) {
+            Alert(
+                title: Text("HealthKit Access Required"),
+                message: Text(healthKitError ?? "Please enable HealthKit access in Settings to continue."),
+                primaryButton: .default(Text("Open Settings")) {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                },
+                secondaryButton: .cancel()
+            )
+        }
         .background(Color.white)
         .edgesIgnoringSafeArea(.all)
         .navigationBarBackButtonHidden(true)
@@ -164,5 +191,22 @@ struct PermissionsView_Previews: PreviewProvider {
     static var previews: some View {
         PermissionsView()
             .environmentObject(AppState())
+    }
+}
+
+// MARK: - HealthKit Authorization
+extension PermissionsView {
+    private func requestHealthKitAccess() {
+        healthKitManager.requestAuthorization { success, error in
+            DispatchQueue.main.async {
+                if success {
+                    self.healthKitEnabled = true
+                } else {
+                    self.healthKitEnabled = false
+                    self.healthKitError = error?.localizedDescription ?? "Failed to authorize HealthKit access."
+                    self.showingHealthKitAlert = true
+                }
+            }
+        }
     }
 }
