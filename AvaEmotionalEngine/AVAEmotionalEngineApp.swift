@@ -43,8 +43,9 @@ struct AVAEmotionalEngineApp: App {
         }
     }
     
-    // Initialize AVA with the AI generator
+    // Initialize app state and metrics
     @StateObject var appState = AppState()
+    @StateObject private var metricsManager = MetricsManager.shared
     
     // Create instances of the core components
     let eeg = MuseEEGReceiver()
@@ -112,20 +113,7 @@ struct AVAEmotionalEngineApp: App {
                     PermissionsView()
                         .environmentObject(appState)
                 } else {
-                    ContentView(
-                        psi: metrics.psi,
-                        entropy: metrics.entropy,
-                        coherence: metrics.coherence,
-                        integrity: metrics.integrity,
-                        ksxDelta: metrics.ksxDelta,
-                        psiOmegaLock: metrics.psiOmegaLock,
-                        symbolicClassifications: metrics.symbolicClassifications,
-                        forecastScore: metrics.forecastScore,
-                        mesqi: metrics.mesqi,
-                        gatingEnabled: $gatingEnabled,
-                        lastMessage: lastMessage,
-                        kxrpScores: metrics.kxrpScores
-                    )
+                    HomeView()
                         .environmentObject(appState)
                 }
             }
@@ -304,6 +292,12 @@ struct AVAEmotionalEngineApp: App {
         // Get symbolic memory if available
         let symbolicMemory = thoughtResult.classifiers.first.flatMap { Codex.get($0) } ?? ""
         let suppressionHint = interpResult.symbolicClassifications.first
+        
+        // Update the metrics manager with new scores
+        metricsManager.updateMetrics(
+            psi: Double(newMetrics.psi),
+            kxrpScores: kxrpScores.map { Double($0) }
+        )
         
         // Update metrics with interpreter results
         metrics = (
