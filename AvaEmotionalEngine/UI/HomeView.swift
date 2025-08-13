@@ -1,9 +1,27 @@
 import SwiftUI
 import Combine
 
+// Tab enum for navigation
+enum Tab: String, CaseIterable {
+    case home = "house"
+    case sessions = "timer"
+    case journal = "book.closed"
+    case sync = "arrow.2.circlepath"
+    
+    var title: String {
+        switch self {
+        case .home: return "Home"
+        case .sessions: return "Sessions"
+        case .journal: return "Journal"
+        case .sync: return "Sync"
+        }
+    }
+}
+
 struct HomeView: View {
     @EnvironmentObject var appState: AppState
     @StateObject private var metricsManager = MetricsManager.shared
+    @State private var selectedTab: Tab = .home
     
     // Map KR score to a descriptive label and color
     // KR score ranges from 0.0-1.0, where:
@@ -29,9 +47,10 @@ struct HomeView: View {
         
         let scoreLabel = krScoreLabel(for: metricsManager.krScore)
         
-        VStack(spacing: 0) {
-            Spacer()
-                .frame(height: 80)
+        ZStack(alignment: .bottom) {
+            // Main scrollable content
+            ScrollView {
+                VStack(spacing: 0) {
             // Header
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 2) {
@@ -53,7 +72,7 @@ struct HomeView: View {
             ZStack(alignment: .topTrailing) {
                 RoundedRectangle(cornerRadius: 18)
                     .fill(Color.black)
-                    .frame(height: 240)
+                    .frame(height: 252)
                 VStack(spacing: 8) {
                     Text("Live KR Score")
                         .foregroundColor(.white)
@@ -212,40 +231,100 @@ struct HomeView: View {
             .shadow(color: Color.black.opacity(0.04), radius: 4, x: 0, y: 2)
             .padding([.horizontal, .top])
 
-            Spacer()
-
-            // Bottom Nav Bar
-            HStack {
-                VStack {
-                    Image(systemName: "house.fill")
-                    Text("Home").font(.caption2)
                 }
-                .foregroundColor(.blue)
-                Spacer()
-                VStack {
-                    Image(systemName: "timer")
-                    Text("Sessions").font(.caption2)
-                }
-                Spacer()
-                VStack {
-                    Image(systemName: "book.closed")
-                    Text("Journal").font(.caption2)
-                }
-                Spacer()
-                VStack {
-                    Image(systemName: "arrow.2.circlepath")
-                    Text("Sync").font(.caption2)
-                }
+                .frame(maxWidth: .infinity)
+                .padding(.bottom, 0) // Removed bottom padding since we're using safeAreaInset
             }
-            .padding(.horizontal, 24)
-            .padding(.vertical, 8)
-            .background(Color.white)
-            .shadow(color: Color.black.opacity(0.06), radius: 8, x: 0, y: -2)
         }
         .background(
             LinearGradient(gradient: Gradient(colors: [Color.white, Color.purple.opacity(0.08), Color.blue.opacity(0.08)]), startPoint: .top, endPoint: .bottom)
                 .ignoresSafeArea()
         )
+        .safeAreaInset(edge: .bottom) {
+            // Bottom Navigation Bar
+            VStack(spacing: 0) {
+                Divider()
+                    .background(Color.gray.opacity(0.2))
+                
+                HStack(spacing: 0) {
+                    // Home Button
+                    Button(action: {
+                        withAnimation(.easeInOut(duration: 0.1)) {
+                            selectedTab = .home
+                        }
+                    }) {
+                        VStack(spacing: 4) {
+                            Image(systemName: Tab.home.rawValue)
+                                .font(.system(size: 22))
+                            Text(Tab.home.title)
+                                .font(.system(size: 11, weight: .medium))
+                        }
+                        .foregroundColor(selectedTab == .home ? .blue : .gray)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                    }
+                    
+                    // Sessions Button
+                    Button(action: {
+                        withAnimation(.easeInOut(duration: 0.1)) {
+                            selectedTab = .sessions
+                        }
+                    }) {
+                        VStack(spacing: 4) {
+                            Image(systemName: Tab.sessions.rawValue)
+                                .font(.system(size: 22))
+                            Text(Tab.sessions.title)
+                                .font(.system(size: 11, weight: .medium))
+                        }
+                        .foregroundColor(selectedTab == .sessions ? .blue : .gray)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                    }
+                    
+                    // Journal Button
+                    Button(action: {
+                        withAnimation(.easeInOut(duration: 0.1)) {
+                            selectedTab = .journal
+                        }
+                    }) {
+                        VStack(spacing: 4) {
+                            Image(systemName: Tab.journal.rawValue)
+                                .font(.system(size: 22))
+                            Text(Tab.journal.title)
+                                .font(.system(size: 11, weight: .medium))
+                        }
+                        .foregroundColor(selectedTab == .journal ? .blue : .gray)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                    }
+                    
+                    // Sync Button
+                    Button(action: {
+                        withAnimation(.easeInOut(duration: 0.1)) {
+                            selectedTab = .sync
+                        }
+                    }) {
+                        VStack(spacing: 4) {
+                            Image(systemName: Tab.sync.rawValue)
+                                .font(.system(size: 22))
+                            Text(Tab.sync.title)
+                                .font(.system(size: 11, weight: .medium))
+                        }
+                        .foregroundColor(selectedTab == .sync ? .blue : .gray)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                    }
+                }
+                .frame(height: 60)
+                .frame(maxWidth: .infinity)
+                .background(
+                    Color(UIColor.systemBackground)
+                        .edgesIgnoringSafeArea(.bottom)
+                        .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: -2)
+                )
+            }
+            .background(Color(UIColor.systemBackground))
+        }
     }
 }
 
