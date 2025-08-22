@@ -8,5 +8,7 @@
 #ifndef AvaEmotionalEngine_Bridging_Header_h
 #define AvaEmotionalEngine_Bridging_Header_h
 
+// Import Muse framework headers
+#import <Muse/Muse.h>
 
 #endif /* AvaEmotionalEngine_Bridging_Header_h */

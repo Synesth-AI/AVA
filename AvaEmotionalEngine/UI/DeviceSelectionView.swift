@@ -1,52 +1,28 @@
 import SwiftUI
 
-enum ConnectionState: Equatable {
-    case disconnected
-    case connecting(deviceName: String)
-    case connected(deviceName: String)
-    case failed(deviceName: String, error: String)
-}
-
-struct Device: Identifiable {
-    let id = UUID()
-    let name: String
-    let signalStrength: Int // 1-3 for signal strength indicators
-    var isConnected: Bool = false
-}
+// Moved to separate files:
+// - ConnectionState is now in Models/Device.swift
+// - Device model is now in Models/Device.swift
 
 struct DeviceSelectionView: View {
     @Binding var isPresented: Bool
-    @State private var devices: [Device] = [
-        Device(name: "Muse S-1234", signalStrength: 3, isConnected: false),
-        Device(name: "Muse S-5678", signalStrength: 2, isConnected: false),
-        Device(name: "Muse 2-ABCD", signalStrength: 1, isConnected: false)
-    ]
-    @State private var isScanning = true
+    @StateObject private var museManager = MuseManager.shared
     @State private var selectedDevice: Device?
-    @State private var connectionState: ConnectionState = .disconnected
-    @State private var connectionError: String?
+    @State private var isScanning = false
     
     var onDeviceSelected: ((Device) -> Void)?
     
     private func connectToDevice(_ device: Device) {
-        // Simulate connection attempt (2 seconds)
-        connectionState = .connecting(deviceName: device.name)
-        
-        // 20% chance of failure for demonstration
-        let willFail = Int.random(in: 1...5) == 1
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            if willFail {
-                connectionState = .failed(deviceName: device.name, error: "Connection timed out")
-                connectionError = "Could not connect to \(device.name). Please try again."
-            } else {
-                connectionState = .connected(deviceName: device.name)
-                // Close the popup after a short delay
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    isPresented = false
-                    onDeviceSelected?(device)
-                }
-            }
+        museManager.connect(to: device)
+    }
+    
+    private func startScanning() {
+        isScanning = true
+        museManager.startScanning()
+        // Stop scanning after 10 seconds
+        DispatchQueue.main.asyncAfter(deadline: .now() + 10) {
+            isScanning = false
+            museManager.stopScanning()
         }
     }
     
@@ -54,7 +30,7 @@ struct DeviceSelectionView: View {
         VStack(spacing: 0) {
             // Header
             HStack {
-                switch connectionState {
+                switch museManager.connectionState {
                 case .connecting(let deviceName):
                     Text("Connecting to \(deviceName)...")
                         .font(.system(size: 18, weight: .semibold))
@@ -71,7 +47,7 @@ struct DeviceSelectionView: View {
                 
                 Spacer()
                 
-                if isScanning && connectionState == .disconnected {
+                if isScanning && !museManager.connectionState.isConnected {
                     ProgressView()
                         .progressViewStyle(CircularProgressViewStyle())
                         .scaleEffect(0.8)
@@ -89,19 +65,14 @@ struct DeviceSelectionView: View {
                         .background(Color(red: 0.96, green: 0.96, blue: 0.96))
                         .clipShape(Circle())
                 }
-                .disabled({
-                    if case .connecting = connectionState {
-                        return true
-                    }
-                    return false
-                }())
+                .disabled(museManager.connectionState.isConnecting)
             }
             .padding(.horizontal, 20)
             .padding(.top, 20)
             .padding(.bottom, 16)
             
             // Connection Status or Device List
-            if case .connecting = connectionState {
+            if museManager.connectionState.isConnecting {
                 VStack(spacing: 20) {
                     ProgressView()
                         .scaleEffect(1.5)
@@ -112,7 +83,7 @@ struct DeviceSelectionView: View {
                         .foregroundColor(Color(red: 0.27, green: 0.33, blue: 0.36))
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if case .failed(_, let error) = connectionState {
+            } else if case .failed(_, let error) = museManager.connectionState {
                 VStack(spacing: 20) {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .font(.system(size: 40))
@@ -132,8 +103,7 @@ struct DeviceSelectionView: View {
                     
                     Button(action: {
                         // Reset to try again
-                        connectionState = .disconnected
-                        connectionError = nil
+                        museManager.connectionState = .disconnected
                     }) {
                         Text("Try Again")
                             .font(.system(size: 16, weight: .semibold))
@@ -151,10 +121,10 @@ struct DeviceSelectionView: View {
                 // Device List
                 ScrollView {
                     VStack(spacing: 12) {
-                        ForEach($devices) { $device in
+                        ForEach($museManager.devices) { $device in
                             DeviceRow(device: $device, 
                                      isSelected: selectedDevice?.id == device.id,
-                                     isConnecting: connectionState == .connecting(deviceName: device.name)) {
+                                     isConnecting: museManager.connectionState == .connecting(deviceName: device.name)) {
                                 selectedDevice = device
                                 connectToDevice(device)
                             }
@@ -166,16 +136,7 @@ struct DeviceSelectionView: View {
             }
             
             // Scan Button
-            Button(action: {
-                // Start scanning for devices
-                isScanning = true
-                // Simulate scanning for devices
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                    withAnimation {
-                        isScanning = false
-                    }
-                }
-            }) {
+            Button(action: startScanning) {
                 HStack(spacing: 8) {
                     if isScanning {
                         ProgressView()
@@ -198,6 +159,23 @@ struct DeviceSelectionView: View {
             }
         }
         .frame(width: UIScreen.main.bounds.width * 0.9, height: 400)
+        .background(Color.white)
+        .cornerRadius(20)
+        .shadow(radius: 10)
+        .onAppear {
+            // Start scanning when view appears
+            startScanning()
+        }
+        .onChange(of: museManager.connectionState) { newState in
+            // Handle successful connection
+            if case .connected = newState, let device = selectedDevice {
+                // Close the popup after a short delay
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    isPresented = false
+                    onDeviceSelected?(device)
+                }
+            }
+        }
         .background(Color.white)
         .cornerRadius(20)
         .shadow(radius: 10)
