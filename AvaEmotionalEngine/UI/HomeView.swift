@@ -106,6 +106,9 @@ struct HomeView: View {
                             .font(.title2)
                             .fontWeight(.bold)
                             .foregroundColor(.white)
+                        Text(String(format: "Raw: %.2f", metricsManager.rawKrScore))
+                            .font(.caption)
+                            .foregroundColor(.white.opacity(0.7))
                     }
                     
                     HStack(spacing: 12) {

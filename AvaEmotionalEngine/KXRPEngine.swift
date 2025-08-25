@@ -2,7 +2,11 @@ import Foundation
 
 class KXRPEngine {
     private let equationBank = KXRPEquationBank()
-    private var psiPrev: Double = 0.0
+    private(set) var previousPsi: Double = 0.0
+    
+    func updatePreviousPSI(psi: Double) {
+        previousPsi = psi
+    }
 
     // Main entry: computes all KXRP metrics and returns the selected one (default: 1)
     func computeMetrics(
@@ -25,18 +29,18 @@ class KXRPEngine {
             voice: voice,
             entropy: entropy,
             psi: psi,
-            psiPrev: psiPrev
+            psiPrev: previousPsi
         )
 
         // Update previous psi for next call
-        psiPrev = psi
+        previousPsi = psi
 
         // Return as tuple (for now, use kxrp as psi for demonstration)
         return (Float(kxrp), Float(entropy), Float(coherence), Float(integrity))
     }
 
     // Core metric computations (same as in your test code)
-    private func computePsi(eeg: EEGReading, hrv: HRVMetrics, voice: VoiceFeatures) -> Double {
+    public func computePsi(eeg: EEGReading, hrv: HRVMetrics, voice: VoiceFeatures) -> Double {
         let eegScore = (eeg.alpha + eeg.theta) / 2.0
         let hrvScore = hrv.coherence
         let voiceScore = voice.hnr

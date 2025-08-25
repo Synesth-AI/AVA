@@ -28,6 +28,10 @@ class AVAResponder: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
         do {
             let audioSession = AVAudioSession.sharedInstance()
             try audioSession.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .allowBluetooth])
+            // Ensure output is routed to the loudspeaker
+            if audioSession.currentRoute.outputs.first?.portType != .builtInSpeaker {
+                try audioSession.overrideOutputAudioPort(.speaker)
+            }
             try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
             print("AVAResponder: Audio session set up successfully")
         } catch {
@@ -121,7 +125,12 @@ class AVAResponder: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
         DispatchQueue.main.async {
             do {
                 print("AVAResponder: Activating audio session")
-                try AVAudioSession.sharedInstance().setActive(true, options: .notifyOthersOnDeactivation)
+                let audioSession = AVAudioSession.sharedInstance()
+                try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
+                // Force speaker output every time before speaking
+                if audioSession.currentRoute.outputs.first?.portType != .builtInSpeaker {
+                    try audioSession.overrideOutputAudioPort(.speaker)
+                }
                 
                 print("AVAResponder: Starting speech synthesis")
                 self.synthesizer.speak(utterance)

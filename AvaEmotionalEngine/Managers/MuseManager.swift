@@ -46,6 +46,7 @@ class MuseManager: NSObject, ObservableObject {
         currentMuse?.disconnect()
         currentMuse = nil
         connectionState = .disconnected
+        MuseEEGReceiver.shared.stopStreaming()
     }
 }
 
@@ -57,8 +58,12 @@ extension MuseManager: IXNMuseConnectionListener {
             case .disconnected:
                 self.connectionState = .disconnected
                 self.connectionError = "Disconnected from device"
+                MuseEEGReceiver.shared.stopStreaming()
             case .connected:
                 self.connectionState = .connected(deviceName: muse?.getName() ?? "Muse Device")
+                if let muse = muse {
+                    MuseEEGReceiver.shared.startStreaming(from: muse)
+                }
             case .connecting:
                 self.connectionState = .connecting(deviceName: muse?.getName() ?? "Muse Device")
             case .needsUpdate:

@@ -48,7 +48,7 @@ struct AVAEmotionalEngineApp: App {
     @StateObject private var metricsManager = MetricsManager.shared
     
     // Create instances of the core components
-    let eeg = MuseEEGReceiver()
+    let eeg = MuseEEGReceiver.shared
     let hrvEmulator = HRVEmulator()
     let voiceExtractor = VoiceFeatureExtractor()
     let engine = KXRPEngine()
@@ -84,6 +84,7 @@ struct AVAEmotionalEngineApp: App {
         0, false, [], 0, 0
     )
     @State var lastMessage: String = ""
+    @State var lastSpeechDate: Date = .distantPast
     @State var gatingEnabled: Bool = true
     
     init() {
@@ -152,7 +153,7 @@ struct AVAEmotionalEngineApp: App {
         let audioSession = AVAudioSession.sharedInstance()
         do {
             // Set the audio session category and mode
-            try audioSession.setCategory(.playAndRecord, mode: .default)
+            try audioSession.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .allowBluetooth])
             try audioSession.setActive(true)
             
             // Request permission with a short delay to ensure the audio session is properly set up
@@ -238,6 +239,7 @@ struct AVAEmotionalEngineApp: App {
     }
         
     func updateMetrics() {
+        guard eeg.isStreaming else { return }
         let bands = eeg.getBandPowers()
         let hrvMetrics = hrvEmulator.getMetrics()
         let voiceFeatures = voiceExtractor.getFeatures()
@@ -322,7 +324,8 @@ struct AVAEmotionalEngineApp: App {
         )
         let newMessage = interpResult2.phrase
         
-        if newMessage != lastMessage {
+        let now = Date()
+        if newMessage != lastMessage && now.timeIntervalSince(lastSpeechDate) >= 120 {
             // --- Symbolic memory enhancement ---
             if thoughtResult.whisperDecision == .decode && !symbolicMemory.isEmpty {
                 // Speak symbolic memory first, then AVA's normal message
@@ -350,6 +353,7 @@ struct AVAEmotionalEngineApp: App {
                 )
             }
             lastMessage = newMessage
+            lastSpeechDate = now
         }
         
             // Log to console
