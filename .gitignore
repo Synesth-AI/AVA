@@ -8,6 +8,10 @@
 *.xcuserstate
 *.xcuserdatad/
 
+# Local environment secrets
+.env.local
+.env
+
 # Build directory
 build/
 DerivedData/

@@ -2,6 +2,7 @@ import SwiftUI
 import Combine
 import AVFoundation
 import Speech
+// NOTE: EnvLoader is a local helper; no external secret is hard-coded.
 import UserNotifications
 import UIKit
 
@@ -57,12 +58,7 @@ struct AVAEmotionalEngineApp: App {
     let whisper = WhisperTrigger()
     let emotionInterpreter = EmotionalInterpreter()
     
-    // Initialize AI components with API key from environment variables
-    let aiGenerator = AIResponseGenerator(
-        cloudAPIKey: ProcessInfo.processInfo.environment["OPENAI_API_KEY"] ?? ""
-    )
-    
-    // Initialize AVA with the AI generator
+    // Initialize AVA with the AI generator (set in init after loading env)
     let ava: AVAResponder
     
     // Timer for periodic updates
@@ -88,14 +84,15 @@ struct AVAEmotionalEngineApp: App {
     @State var gatingEnabled: Bool = true
     
     init() {
-        // Initialize AVA with the AI generator
-        self.ava = AVAResponder(aiGenerator: aiGenerator)
-        print("AVAEmotionalEngine: Initializing with AI generator")
-        
-        // Request all necessary permissions
+        // Load environment for local dev (.env.local ignored by git)
+        EnvLoader.load()
+        let apiKey = ProcessInfo.processInfo.environment["OPENAI_API_KEY"] ?? ""
+        let generator = AIResponseGenerator(cloudAPIKey: apiKey)
+        self.ava = AVAResponder(aiGenerator: generator)
+        print("AVAEmotionalEngine: AI generator initialized (key present? \(!apiKey.isEmpty))")
         requestPermissions()
     }
-    
+
     var body: some Scene {
         WindowGroup {
             ZStack {
