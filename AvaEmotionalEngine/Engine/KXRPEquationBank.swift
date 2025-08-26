@@ -5,8 +5,8 @@ class KXRPEquationBank {
 
     func computeKXRP(index: Int, eeg: EEGReading, hrv: HRVMetrics, voice: VoiceFeatures, entropy: Double, psi: Double, psiPrev: Double) -> Double {
         switch index {
-        case 1:  return (eeg.alpha + eeg.theta) / (entropy + self.epsilon)
-        case 2:  return (hrv.coherence + hrv.rmssd) / (entropy + eeg.beta + self.epsilon)
+        case 1:  return (eeg.alpha + eeg.theta) / (eeg.beta + self.epsilon)
+        case 2:  return (eeg.alpha ) / (eeg.theta + eeg.delta)
         case 3:  return (voice.hnr + voice.facialConsistencyScore) / (entropy + hrv.entropy + self.epsilon)
         case 4:  return (eeg.alpha + eeg.theta) / 2.0 / (entropy + eeg.gamma + self.epsilon)
         case 5:  return (hrv.sdnn + eeg.theta) / (entropy + voice.pauseDisorder + self.epsilon)
