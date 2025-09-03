@@ -3,14 +3,10 @@
 *.swpm
 *.xcodeproj/*
 !*.xcodeproj/project.pbxproj
-!*.xcodeproj/xcsharedata/
+!*.xcodeproj/xcshareddata/
 !*.xcworkspace/contents.xcworkspacedata
 *.xcuserstate
 *.xcuserdatad/
-
-# Environment files
-.env.local
-.env*
 
 # Build directory
 build/
