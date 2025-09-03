@@ -102,13 +102,15 @@ struct HomeView: View {
                             .rotationEffect(Angle(degrees: -90))
                             .animation(.easeInOut(duration: 1.0), value: metricsManager.krScore)
                         
-                        Text(String(format: "%.2f", metricsManager.krScore))
-                            .font(.title2)
-                            .fontWeight(.bold)
-                            .foregroundColor(.white)
-                        Text(String(format: "Raw: %.2f", metricsManager.rawKrScore))
-                            .font(.caption)
-                            .foregroundColor(.white.opacity(0.7))
+                        VStack(spacing: 2) {
+                            Text(String(format: "%.2f", metricsManager.krScore))
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .foregroundColor(.white)
+                            Text(String(format: "Raw: %.2f", metricsManager.rawKrScore))
+                                .font(.caption2)
+                                .foregroundColor(.white.opacity(0.7))
+                        }
                     }
                     
                     HStack(spacing: 12) {

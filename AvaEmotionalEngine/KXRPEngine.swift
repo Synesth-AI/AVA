@@ -13,7 +13,7 @@ class KXRPEngine {
         eeg: EEGReading,
         hrv: HRVMetrics,
         voice: VoiceFeatures,
-        index: Int = 1
+        index: Int = 2
     ) -> (psi: Float, entropy: Float, coherence: Float, integrity: Float) {
         // Compute core metrics
         let psi = computePsi(eeg: eeg, hrv: hrv, voice: voice)
