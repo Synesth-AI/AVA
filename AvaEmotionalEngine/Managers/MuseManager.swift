@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 
 
 class MuseManager: NSObject, ObservableObject {
@@ -7,6 +8,7 @@ class MuseManager: NSObject, ObservableObject {
     @Published var devices: [Device] = []
     @Published var connectionState: ConnectionState = .disconnected
     @Published var connectionError: String?
+    @Published var batteryLevel: Int = 0
     
     private var museManager: IXNMuseManagerIos?
     private var connectionToken: IXNLogListener?
@@ -38,15 +40,29 @@ class MuseManager: NSObject, ObservableObject {
         currentMuse = muse
         connectionState = .connecting(deviceName: device.name)
         
+        // Register for battery updates
+        muse.register(self, type: .battery)
         muse.register(self)
         muse.runAsynchronously()
+        
+        // Start battery level monitoring
+        startBatteryMonitoring()
     }
     
     func disconnect() {
         currentMuse?.disconnect()
         currentMuse = nil
         connectionState = .disconnected
+        batteryLevel = 0
         MuseEEGReceiver.shared.stopStreaming()
+    }
+    
+    private func startBatteryMonitoring() {
+        // Request battery level updates every 60 seconds
+        Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
+            self?.currentMuse?.register(self, type: .battery)
+            // The battery level will be updated in the receive(_:muse:) method
+        }.fire()
     }
 }
 
@@ -73,6 +89,8 @@ extension MuseManager: IXNMuseConnectionListener {
                 self.connectionState = .failed(deviceName: muse?.getName() ?? "Muse Device", 
                                              error: "Unknown connection state")
             @unknown default:
+                self.connectionState = .failed(deviceName: muse?.getName() ?? "Muse Device", 
+                                             error: "Unknown connection state: \(packet.currentConnectionState.rawValue)")
                 break
             }
         }
@@ -81,20 +99,32 @@ extension MuseManager: IXNMuseConnectionListener {
 
 // MARK: - IXNMuseListener
 extension MuseManager: IXNMuseListener {
-    func receive(_ packet: IXNMuseDataPacket, muse: IXNMuse?) {
+    @objc func receiveMuseDataPacket(_ packet: IXNMuseDataPacket?, muse: IXNMuse?) {
         // Handle incoming data packets
-        // You can implement this based on what data you need
+        guard let packet = packet, packet.packetType() == .battery else { return }
+        
+        // Get battery percentage from the packet
+        let batteryPercentage = packet.getBatteryValue(.chargePercentageRemaining)
+        if batteryPercentage > 0 {
+            DispatchQueue.main.async {
+                self.batteryLevel = Int(batteryPercentage)
+            }
+        }
     }
     
-    func receive(_ packet: IXNMuseArtifactPacket, muse: IXNMuse?) {
+    @objc func receiveMuseArtifactPacket(_ packet: IXNMuseArtifactPacket?, muse: IXNMuse?) {
         // Handle artifact packets
     }
     
-    func museListChanged() {
+    @objc func museListChanged() {
         // Update devices list when Muse devices are discovered or removed
         DispatchQueue.main.async {
             guard let availableMuses = self.museManager?.getMuses() as? [IXNMuse] else { return }
             self.devices = availableMuses.map { Device(name: $0.getName(), muse: $0) }
         }
     }
+}
+
+// MARK: - IXNMuseDataListener
+extension MuseManager: IXNMuseDataListener {
 }

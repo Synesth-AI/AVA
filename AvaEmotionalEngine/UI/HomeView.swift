@@ -1,11 +1,46 @@
 import SwiftUI
 import Combine
 
+private struct BatteryIndicatorView: View {
+    @ObservedObject private var museManager = MuseManager.shared
+    
+    private var batteryLevel: Int {
+        museManager.batteryLevel
+    }
+    
+    private var batteryIcon: String {
+        switch batteryLevel {
+        case 0..<20: return "battery.0"
+        case 20..<40: return "battery.25"
+        case 40..<60: return "battery.50"
+        case 60..<80: return "battery.75"
+        default: return "battery.100"
+        }
+    }
+    
+    private var textColor: Color {
+        batteryLevel < 20 ? .red : .black
+    }
+    
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: batteryIcon)
+                .foregroundColor(textColor)
+            
+            Text("\(batteryLevel)%")
+                .font(.caption)
+                .foregroundColor(textColor)
+                .frame(minWidth: 30, alignment: .trailing)
+        }
+    }
+}
+
 struct HomeView: View {
     @State private var isShowingEquationSelection = false
     @EnvironmentObject var appState: AppState
     @StateObject private var metricsManager = MetricsManager.shared
     @State private var selectedTab: Tab = .home
+    @State private var showLiveData = false
     @State private var isShowingLiveDataSelector = false
     
     // Map KR score to a descriptive label and color
@@ -74,7 +109,13 @@ struct HomeView: View {
                         .foregroundColor(.gray)
                 }
                 Spacer()
-                HStack(spacing: 12) {
+                HStack(spacing: 16) {
+                    // Battery indicator
+                    if MuseManager.shared.connectionState.isConnected && MuseManager.shared.batteryLevel > 0 {
+                        BatteryIndicatorView()
+                    }
+                    
+                    // Live data button
                     Button(action: {
                         isShowingLiveDataSelector = true
                     }) {
@@ -93,48 +134,82 @@ struct HomeView: View {
             }
             .padding([.horizontal, .top])
 
-            // Live KR Score Card
-            ZStack(alignment: .topTrailing) {
+            // Live Data Card
+            ZStack(alignment: .top) {
                 RoundedRectangle(cornerRadius: 18)
                     .fill(Color.black)
-                    .frame(height: 252)
-                VStack(spacing: 8) {
-                    Text("Live KR Score")
+                    .frame(height: 480)
+                
+                // Header with title and toggle button
+                HStack {
+                    Text(showLiveData ? "Live Brain Waves" : "Live KR Score")
                         .foregroundColor(.white)
                         .font(.subheadline)
+                        .padding(.leading, 16)
                         .padding(.top, 16)
+                    
                     Spacer()
-                    // Animated circle visualization
-                    ZStack {
-                        Circle()
-                            .stroke(Color.white.opacity(0.2), lineWidth: 6)
-                            .frame(width: 80, height: 80)
-                        
-                        Circle()
-                            .trim(from: 0.0, to: CGFloat(min(metricsManager.krScore, 1.0)))
-                            .stroke(
-                                LinearGradient(
-                                    gradient: Gradient(colors: [
-                                        Color.blue.opacity(0.8),
-                                        Color.purple.opacity(0.8)
-                                    ]),
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ),
-                                style: StrokeStyle(lineWidth: 8, lineCap: .round)
-                            )
-                            .frame(width: 80, height: 80)
-                            .rotationEffect(Angle(degrees: -90))
-                            .animation(.easeInOut(duration: 1.0), value: metricsManager.krScore)
-                        
-                        VStack(spacing: 2) {
-                            Text(String(format: "%.2f", metricsManager.krScore))
-                                .font(.title2)
-                                .fontWeight(.bold)
-                                .foregroundColor(.white)
-                            Text(String(format: "Raw: %.2f", metricsManager.rawKrScore))
-                                .font(.caption2)
-                                .foregroundColor(.white.opacity(0.7))
+                    
+                    // Toggle Button
+                    Button(action: {
+                        withAnimation {
+                            showLiveData.toggle()
+                        }
+                    }) {
+                        Image(systemName: showLiveData ? "chart.pie" : "waveform.path.ecg")
+                            .foregroundColor(.white)
+                            .padding(8)
+                            .background(Color.blue.opacity(0.7))
+                            .clipShape(Circle())
+                    }
+                    .padding(.trailing, 16)
+                    .padding(.top, 8)
+                }
+                
+                VStack(spacing: 8) {
+                    Spacer()
+                    
+                    if showLiveData {
+                        // Live Data Visualization
+                        VStack(spacing: 4) {
+                            // Connection status is now handled in the LiveEEGStreamView
+                            LiveEEGStreamView()
+                                .frame(height: 320)
+                                .padding(.horizontal, 4)
+                        }
+                    } else {
+                        // Animated circle visualization
+                        ZStack {
+                            Circle()
+                                .stroke(Color.white.opacity(0.2), lineWidth: 6)
+                                .frame(width: 80, height: 80)
+                            
+                            Circle()
+                                .trim(from: 0.0, to: CGFloat(min(metricsManager.krScore, 1.0)))
+                                .stroke(
+                                    LinearGradient(
+                                        gradient: Gradient(colors: [
+                                            Color.blue.opacity(0.8),
+                                            Color.purple.opacity(0.8)
+                                        ]),
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    style: StrokeStyle(lineWidth: 8, lineCap: .round)
+                                )
+                                .frame(width: 80, height: 80)
+                                .rotationEffect(Angle(degrees: -90))
+                                .animation(.easeInOut(duration: 1.0), value: metricsManager.krScore)
+                            
+                            VStack(spacing: 2) {
+                                Text(String(format: "%.2f", metricsManager.krScore))
+                                    .font(.title2)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(.white)
+                                Text(String(format: "Raw: %.2f", metricsManager.rawKrScore))
+                                    .font(.caption2)
+                                    .foregroundColor(.white.opacity(0.7))
+                            }
                         }
                     }
                     

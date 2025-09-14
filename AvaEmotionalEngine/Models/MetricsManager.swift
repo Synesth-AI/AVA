@@ -85,7 +85,7 @@ class MetricsManager: ObservableObject {
         let calendar = Calendar.current
         
         for hour in 0..<hoursInDay {
-            if let date = calendar.date(byAdding: .hour, value: -hoursInDay + hour, to: now) {
+            if let _ = calendar.date(byAdding: .hour, value: -hoursInDay + hour, to: now) {
                 // Generate a value between 0.3 and 0.9 with some variation
                 let baseValue = 0.3 + 0.6 * Double(arc4random_uniform(100)) / 100.0
                 let variation = sin(Double(hour) * .pi / 12.0) * 0.2 // Daily pattern

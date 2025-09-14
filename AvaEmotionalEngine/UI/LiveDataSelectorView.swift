@@ -147,7 +147,7 @@ struct LiveEEGStreamView: View {
     ]
     
     var body: some View {
-        VStack {
+        VStack(spacing: 8) {
             // Connection Status
             HStack {
                 Circle()
@@ -155,7 +155,7 @@ struct LiveEEGStreamView: View {
                     .frame(width: 12, height: 12)
                 Text(viewModel.connectionStatus)
                     .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.white)
                 
                 if !viewModel.isConnected {
                     Button("Connect") {
@@ -164,7 +164,7 @@ struct LiveEEGStreamView: View {
                     .buttonStyle(.bordered)
                 }
             }
-            .padding(.top)
+            .padding(.top, 4)
             
             // Frequency Band Selector
             ScrollView(.horizontal, showsIndicators: false) {
@@ -199,8 +199,8 @@ struct LiveEEGStreamView: View {
             }
             .padding(.vertical, 4)
             
-            ScrollView {
-                VStack(spacing: 20) {
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 12) {
                     // Display selected band or all bands
                     if let selectedBand = selectedBand, let band = frequencyBands.first(where: { $0.name == selectedBand }) {
                         BandGraphView(
@@ -224,13 +224,13 @@ struct LiveEEGStreamView: View {
                                 range: band.range,
                                 unit: "μV"
                             )
-                            .frame(height: 100)
+                            .frame(height: 80)
                             .padding(.horizontal)
                         }
                     }
                 }
             }
-            .padding(.vertical)
+            .padding(.vertical, 4)
         }
         .navigationTitle("EEG Monitor")
         .onAppear {
