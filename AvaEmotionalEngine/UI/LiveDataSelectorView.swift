@@ -133,8 +133,18 @@ class EEGViewModel: ObservableObject {
 
 struct LiveEEGStreamView: View {
     @StateObject private var viewModel = EEGViewModel()
+    @State private var selectedBand: String? = nil
     
     let maxDataPoints = 256 // Muse sample rate is 256Hz, so this gives us 1 second of data
+    
+    // Define frequency bands with their display names and colors
+    private let frequencyBands = [
+        (name: "Delta", range: 0.5..<4.0, color: Color.blue),
+        (name: "Theta", range: 4.0..<8.0, color: Color.green),
+        (name: "Alpha", range: 8.0..<13.0, color: Color.orange),
+        (name: "Beta", range: 13.0..<30.0, color: Color.red),
+        (name: "Gamma", range: 30.0..<50.0, color: Color.purple)
+    ]
     
     var body: some View {
         VStack {
@@ -156,110 +166,67 @@ struct LiveEEGStreamView: View {
             }
             .padding(.top)
             
-            ScrollView {
-            VStack(spacing: 20) {
-                Text("EEG Frequency Bands")
-                    .font(.headline)
-                    .foregroundColor(.primary)
-                
-                // Combined waveform
-                VStack(alignment: .leading) {
-                    Text("Combined Signal")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                        .padding(.horizontal)
-                    
-                    GeometryReader { geometry in
-                        ZStack {
-                            // Grid background
-                            Path { path in
-                                // Horizontal lines
-                                for i in 0...4 {
-                                    let y = geometry.size.height * CGFloat(i) / 4
-                                    path.move(to: CGPoint(x: 0, y: y))
-                                    path.addLine(to: CGPoint(x: geometry.size.width, y: y))
-                                }
-                                // Vertical lines (time markers)
-                                for i in 0..<5 {
-                                    let x = geometry.size.width * CGFloat(i) / 4
-                                    path.move(to: CGPoint(x: x, y: 0))
-                                    path.addLine(to: CGPoint(x: x, y: geometry.size.height))
-                                }
-                            }
-                            .stroke(Color.gray.opacity(0.2), lineWidth: 0.5)
-                            
-                            // Combined waveform
-                            if !viewModel.rawEEGData.isEmpty {
-                                Path { path in
-                                    let width = geometry.size.width
-                                    let height = geometry.size.height
-                                    let step = width / CGFloat(viewModel.rawEEGData.count - 1)
-                                    
-                                    path.move(to: CGPoint(x: 0, y: height / 2))
-                                    
-                                    for index in 1..<viewModel.rawEEGData.count {
-                                        let x = step * CGFloat(index)
-                                        // Scale the data to fit the view better
-                                        let y = height / 2 - CGFloat(viewModel.rawEEGData[index]) * 10.0
-                                        path.addLine(to: CGPoint(x: x, y: y))
-                                    }
-                                }
-                                .stroke(Color.primary, style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
-                            }
-                        }
+            // Frequency Band Selector
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    // All button to show all bands
+                    Button(action: {
+                        selectedBand = nil
+                    }) {
+                        Text("All")
+                            .font(.subheadline)
+                            .padding(8)
+                            .background(selectedBand == nil ? Color.blue.opacity(0.5) : Color.gray.opacity(0.2))
+                            .cornerRadius(8)
+                            .foregroundColor(selectedBand == nil ? .white : .primary)
                     }
-                    .frame(height: 100)
-                    .padding(.horizontal)
-                }
-                
-                // Individual frequency bands
-                ForEach($viewModel.bands) { $band in
-                    VStack(alignment: .leading) {
-                        HStack {
+                    
+                    // Individual band buttons
+                    ForEach(frequencyBands, id: \.name) { band in
+                        Button(action: {
+                            selectedBand = band.name
+                        }) {
                             Text(band.name)
                                 .font(.subheadline)
-                                .foregroundColor(band.color)
-                            Text(band.frequencyRange)
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            Spacer()
-                            Text(String(format: "%.1f μV", band.data.last ?? 0))
-                                .font(.caption.monospacedDigit())
-                                .foregroundColor(.primary)
+                                .padding(8)
+                                .background(selectedBand == band.name ? band.color.opacity(0.5) : Color.gray.opacity(0.2))
+                                .cornerRadius(8)
+                                .foregroundColor(selectedBand == band.name ? .white : .primary)
                         }
+                    }
+                }
+                .padding(.horizontal)
+            }
+            .padding(.vertical, 4)
+            
+            ScrollView {
+                VStack(spacing: 20) {
+                    // Display selected band or all bands
+                    if let selectedBand = selectedBand, let band = frequencyBands.first(where: { $0.name == selectedBand }) {
+                        BandGraphView(
+                            title: "\(band.name) (\(String(format: "%.1f-%.1f Hz", band.range.lowerBound, band.range.upperBound)))",
+                            data: viewModel.bands.first(where: { $0.name == band.name })?.data ?? [],
+                            color: band.color,
+                            maxDataPoints: maxDataPoints,
+                            range: band.range,
+                            unit: "μV"
+                        )
+                        .frame(height: 200)
                         .padding(.horizontal)
-                        
-                        GeometryReader { geometry in
-                            ZStack {
-                                // Grid background
-                                Path { path in
-                                    // Center line
-                                    path.move(to: CGPoint(x: 0, y: geometry.size.height / 2))
-                                    path.addLine(to: CGPoint(x: geometry.size.width, y: geometry.size.height / 2))
-                                }
-                                .stroke(Color.gray.opacity(0.3), lineWidth: 0.5)
-                                
-                                // Waveform
-                                if !band.data.isEmpty {
-                                    Path { path in
-                                        let width = geometry.size.width
-                                        let height = geometry.size.height
-                                        let step = width / CGFloat(band.data.count - 1)
-                                        
-                                        path.move(to: CGPoint(x: 0, y: height / 2))
-                                        
-                                        for index in 1..<band.data.count {
-                                            let x = step * CGFloat(index)
-                                            let y = height / 2 - CGFloat(band.data[index]) * (height / 100.0)
-                                            path.addLine(to: CGPoint(x: x, y: y))
-                                        }
-                                    }
-                                    .stroke(band.color, style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
-                                }
-                            }
+                    } else {
+                        // Show all bands in a scrollable view
+                        ForEach(frequencyBands, id: \.name) { band in
+                            BandGraphView(
+                                title: "\(band.name) (\(String(format: "%.1f-%.1f Hz", band.range.lowerBound, band.range.upperBound)))",
+                                data: viewModel.bands.first(where: { $0.name == band.name })?.data ?? [],
+                                color: band.color,
+                                maxDataPoints: maxDataPoints / 2,
+                                range: band.range,
+                                unit: "μV"
+                            )
+                            .frame(height: 100)
+                            .padding(.horizontal)
                         }
-                        .frame(height: 60)
-                        .padding(.horizontal)
                     }
                 }
             }
@@ -272,6 +239,79 @@ struct LiveEEGStreamView: View {
     }
 }
 
+// MARK: - Band Graph View
+struct BandGraphView: View {
+    let title: String
+    let data: [Double]
+    let color: Color
+    let maxDataPoints: Int
+    let range: Range<Double>
+    let unit: String
+    
+    private var normalizedData: [Double] {
+        guard !data.isEmpty else { return [] }
+        let maxValue = max(1.0, data.max() ?? 1.0) // Avoid division by zero
+        return data.map { $0 / maxValue }
+    }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text(title)
+                    .font(.subheadline)
+                    .foregroundColor(color)
+                Spacer()
+                if let lastValue = data.last {
+                    Text(String(format: "%.1f \(unit)", lastValue))
+                        .font(.caption.monospacedDigit())
+                        .foregroundColor(.primary)
+                }
+            }
+            
+            GeometryReader { geometry in
+                ZStack {
+                    // Grid lines
+                    Path { path in
+                        // Horizontal lines
+                        for i in 0...4 {
+                            let y = geometry.size.height * CGFloat(i) / 4
+                            path.move(to: CGPoint(x: 0, y: y))
+                            path.addLine(to: CGPoint(x: geometry.size.width, y: y))
+                        }
+                    }
+                    .stroke(Color.gray.opacity(0.2), lineWidth: 0.5)
+                    
+                    // Waveform
+                    if !normalizedData.isEmpty {
+                        Path { path in
+                            let step = geometry.size.width / CGFloat(normalizedData.count - 1)
+                            let baseY = geometry.size.height
+                            
+                            path.move(to: CGPoint(x: 0, y: baseY * (1 - CGFloat(normalizedData[0]))))
+                            
+                            for i in 1..<normalizedData.count {
+                                let x = step * CGFloat(i)
+                                let y = baseY * (1 - CGFloat(normalizedData[i]))
+                                path.addLine(to: CGPoint(x: x, y: y))
+                            }
+                        }
+                        .stroke(color, style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
+                    }
+                }
+            }
+            .frame(height: 80)
+            .background(Color.gray.opacity(0.05))
+            .cornerRadius(8)
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+            )
+        }
+        .padding(.vertical, 4)
+    }
+}
+
+// MARK: - Preview
 struct LiveDataSelectorView_Previews: PreviewProvider {
     static var previews: some View {
         LiveDataSelectorView()

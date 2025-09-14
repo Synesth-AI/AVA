@@ -1,12 +1,38 @@
 import SwiftUI
 import Combine
 
+// Navigation wrapper for the app
+struct AppNavigation: View {
+    var body: some View {
+        NavigationView {
+            HomeView()
+        }
+        .navigationViewStyle(StackNavigationViewStyle())
+    }
+}
+
+// Tab enum for navigation
+enum Tab: String, CaseIterable {
+    case home = "house"
+    case sessions = "timer"
+    case journal = "book.closed"
+    case sync = "arrow.2.circlepath"
+    
+    var title: String {
+        switch self {
+        case .home: return "Home"
+        case .sessions: return "Sessions"
+        case .journal: return "Journal"
+        case .sync: return "Sync"
+        }
+    }
+}
+
 struct HomeView: View {
     @State private var isShowingEquationSelection = false
     @EnvironmentObject var appState: AppState
     @StateObject private var metricsManager = MetricsManager.shared
     @State private var selectedTab: Tab = .home
-    @State private var isShowingLiveDataSelector = false
     
     // Map KR score to a descriptive label and color
     // KR score ranges from 0.0-1.0, where:
@@ -39,10 +65,10 @@ struct HomeView: View {
             return "You're highly focused and engaged. Perfect for tasks requiring concentration, problem-solving, or physical activity."
             
         case 0.75...1.0: 
-            return "You're in a high-energy state. Use this energy for intense tasks, workouts, or creative bursts."
+            return "You're in a state of high energy and excitement. Great for intense physical activity or creative bursts, but may be too intense for focused work."
             
         default: 
-            return "Your KR score is currently unavailable."
+            return "Your current state is being analyzed. Please wait a moment..."
         }
     }
     
@@ -74,21 +100,11 @@ struct HomeView: View {
                         .foregroundColor(.gray)
                 }
                 Spacer()
-                HStack(spacing: 12) {
-                    Button(action: {
-                        isShowingLiveDataSelector = true
-                    }) {
-                        Image(systemName: "chart.line.uptrend.xyaxis")
-                            .resizable()
-                            .frame(width: 24, height: 24)
-                            .foregroundColor(.black)
-                    }
-                    Image(systemName: "person.crop.circle")
-                        .resizable()
-                        .frame(width: 40, height: 40)
-                        .clipShape(Circle())
-                }
-                .padding(.horizontal, 20)
+                Image(systemName: "person.crop.circle")
+                    .resizable()
+                    .frame(width: 40, height: 40)
+                    .clipShape(Circle())
+                    .padding(.horizontal, 20)
                 }
             }
             .padding([.horizontal, .top])
@@ -359,36 +375,21 @@ struct HomeView: View {
             .cornerRadius(14)
             .shadow(color: Color.black.opacity(0.04), radius: 4, x: 0, y: 2)
             .padding([.horizontal, .top])
+
+                }
+                .frame(maxWidth: .infinity)
+            }
         }
-        .frame(maxWidth: .infinity)
-    }
-    .background(
-        LinearGradient(
-            gradient: Gradient(colors: [
-                Color.white,
-                Color.purple.opacity(0.08),
-                Color.blue.opacity(0.08)
-            ]),
-            startPoint: .top,
-            endPoint: .bottom
+        .background(
+            LinearGradient(gradient: Gradient(colors: [Color.white, Color.purple.opacity(0.08), Color.blue.opacity(0.08)]), startPoint: .top, endPoint: .bottom)
+                .ignoresSafeArea()
         )
-        .ignoresSafeArea()
-    )
-    .sheet(isPresented: $isShowingEquationSelection) {
+        .sheet(isPresented: $isShowingEquationSelection) {
             NavigationView {
                 EquationSelectionView()
                     .navigationBarTitle("Select Equation", displayMode: .inline)
                     .navigationBarItems(trailing: Button("Done") {
                         isShowingEquationSelection = false
-                    })
-            }
-        }
-        .sheet(isPresented: $isShowingLiveDataSelector) {
-            NavigationView {
-                LiveDataSelectorView()
-                    .navigationBarTitle("Select Live Data", displayMode: .inline)
-                    .navigationBarItems(trailing: Button("Done") {
-                        isShowingLiveDataSelector = false
                     })
             }
         }
@@ -474,9 +475,6 @@ struct HomeView: View {
                         .edgesIgnoringSafeArea(.bottom)
                 )
             }
-        }
-        .sheet(isPresented: $isShowingLiveDataSelector) {
-            LiveDataSelectorView()
         }
     }
 }

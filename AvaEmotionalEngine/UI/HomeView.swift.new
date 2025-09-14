@@ -1,0 +1,152 @@
+import SwiftUI
+import Combine
+
+// Navigation wrapper for the app
+struct AppNavigation: View {
+    var body: some View {
+        NavigationView {
+            HomeView()
+        }
+        .navigationViewStyle(StackNavigationViewStyle())
+    }
+}
+
+// Tab enum for navigation
+enum Tab: String, CaseIterable {
+    case home = "house"
+    case sessions = "timer"
+    case journal = "book.closed"
+    case sync = "arrow.2.circlepath"
+    
+    var title: String {
+        switch self {
+        case .home: return "Home"
+        case .sessions: return "Sessions"
+        case .journal: return "Journal"
+        case .sync: return "Sync"
+        }
+    }
+}
+
+struct HomeView: View {
+    @State private var isShowingEquationSelection = false
+    @EnvironmentObject var appState: AppState
+    @StateObject private var metricsManager = MetricsManager.shared
+    @State private var selectedTab: Tab = .home
+    
+    // Map KR score to a descriptive label and color
+    private func krScoreLabel(for score: Double) -> (text: String, color: Color) {
+        switch score {
+        case 0.0..<0.3: return ("😴 Resting", .blue)
+        case 0.3..<0.45: return ("😌 Calm", .teal)
+        case 0.45..<0.6: return ("🤔 Attentive", .green)
+        case 0.6..<0.75: return ("🎯 Focused", .yellow)
+        case 0.75...1.0: return ("⚡ Energized", .orange)
+        default: return ("❓ Unknown", .gray)
+        }
+    }
+    
+    private func getScoreDescription() -> String {
+        switch metricsManager.krScore {
+        case 0.0..<0.3: return "Your mind is in a deep rest state. Ideal for relaxation, meditation, or recovery periods."
+        case 0.3..<0.45: return "You're in a calm, relaxed state. Good for light activities, creative thinking, or casual conversations."
+        case 0.45..<0.6: return "You're alert and attentive. This is a great state for learning, reading, or engaging in meaningful discussions."
+        case 0.6..<0.75: return "You're highly focused and engaged. Perfect for tasks requiring concentration, problem-solving, or physical activity."
+        case 0.75...1.0: return "You're in a state of high energy and excitement. Great for intense physical activity or creative bursts, but may be too intense for focused work."
+        default: return "Your current state is being analyzed. Please wait a moment..."
+        }
+    }
+    
+    private func getCurrentTime() -> String {
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        return formatter.string(from: Date())
+    }
+    
+    var body: some View {
+        let scoreLabel = krScoreLabel(for: metricsManager.krScore)
+        
+        ZStack(alignment: .bottom) {
+            // Main scrollable content
+            ScrollView {
+                VStack(spacing: 0) {
+                    // Header
+                    HStack(alignment: .top) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Hi \(appState.userName.isEmpty ? "there" : appState.userName)")
+                                .font(.title2).fontWeight(.semibold)
+                            Text("Sunday 17th June, 2025")
+                                .font(.subheadline)
+                                .foregroundColor(.gray)
+                        }
+                        Spacer()
+                        Image(systemName: "person.crop.circle")
+                            .resizable()
+                            .frame(width: 40, height: 40)
+                            .clipShape(Circle())
+                            .padding(.horizontal, 20)
+                    }
+                    .padding([.horizontal, .top])
+                    
+                    // Rest of your view content would go here
+                    // ...
+                    
+                    Spacer()
+                }
+            }
+            
+            // Bottom navigation bar
+            VStack(spacing: 0) {
+                Divider()
+                HStack(spacing: 0) {
+                    ForEach(Tab.allCases, id: \.self) { tab in
+                        Button(action: {
+                            selectedTab = tab
+                        }) {
+                            VStack(spacing: 4) {
+                                Image(systemName: tab.rawValue)
+                                    .font(.system(size: 22))
+                                Text(tab.title)
+                                    .font(.system(size: 11, weight: .medium))
+                            }
+                            .foregroundColor(selectedTab == tab ? .blue : .gray)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
+                        }
+                    }
+                }
+                .frame(height: 60)
+                .background(Color(UIColor.systemBackground))
+            }
+        }
+        .background(
+            LinearGradient(
+                gradient: Gradient(colors: [Color.white, Color.purple.opacity(0.08), Color.blue.opacity(0.08)]),
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+        )
+        .sheet(isPresented: $isShowingEquationSelection) {
+            NavigationView {
+                EquationSelectionView()
+                    .navigationBarTitle("Select Equation", displayMode: .inline)
+                    .navigationBarItems(trailing: Button("Done") {
+                        isShowingEquationSelection = false
+                    })
+            }
+        }
+    }
+}
+
+#Preview {
+    let appState = AppState()
+    appState.userName = "Isaac"
+    
+    let metricsManager = MetricsManager.shared
+    metricsManager.updateMetrics(psi: 72.5, kxrpScores: [72.5, 68.2, 75.0])
+    
+    return HomeView()
+        .environmentObject(appState)
+        .environmentObject(metricsManager)
+}

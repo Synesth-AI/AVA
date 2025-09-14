@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct LineGraphView: View {
-    var data: [(date: Date, value: Double)]
+    var data: [Double]
     var lineColor: Color = .blue
     var lineWidth: CGFloat = 2.0
     var dotSize: CGFloat = 4.0
@@ -10,14 +10,14 @@ struct LineGraphView: View {
     private func point(at index: Int, in rect: CGRect) -> CGPoint {
         guard !data.isEmpty, index < data.count else { return .zero }
         
-        let timeRange = data.last!.date.timeIntervalSince(data.first!.date)
-        let xPosition = timeRange > 0 ? 
-            CGFloat(data[index].date.timeIntervalSince(data.first!.date) / timeRange) * rect.width :
+        // Calculate x position based on index
+        let xPosition = data.count > 1 ? 
+            (CGFloat(index) / CGFloat(data.count - 1)) * rect.width :
             0
         
         // Ensure y-position starts from 0 (bottom of the graph)
         // and scales to the actual data range, but never goes below 0
-        let value = max(0, data[index].value) // Ensure we don't go below 0
+        let value = max(0, data[index]) // Ensure we don't go below 0
         let yPosition = (1 - CGFloat(value)) * rect.height
         
         return CGPoint(x: xPosition, y: yPosition)
@@ -48,37 +48,19 @@ struct LineGraphView: View {
                     }
                     .stroke(lineColor, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round, lineJoin: .round))
                     
-                    // Dots at data points
+                    // Add dots at data points if enabled
                     if showDots {
                         ForEach(0..<data.count, id: \.self) { index in
-                            if index % 5 == 0 { // Show every 5th point to avoid clutter
-                                Circle()
-                                    .fill(lineColor)
-                                    .frame(width: dotSize, height: dotSize)
-                                    .position(point(at: index, in: geometry.frame(in: .local)))
-                            }
+                            Circle()
+                                .fill(lineColor)
+                                .frame(width: dotSize, height: dotSize)
+                                .position(point(at: index, in: geometry.frame(in: .local)))
                         }
                     }
                 }
                 
-                // Score indicators on the left
-                VStack(alignment: .leading, spacing: 0) {
-                    // Ensure the max value is at least 1.0 to prevent division by zero
-                    let maxValue = max(1.0, data.map { $0.value }.max() ?? 1.0)
-                    
-                    Text(String(format: "%.0f%%", min(100, maxValue * 100)))
-                        .font(.caption2)
-                        .foregroundColor(.gray)
-                    Spacer()
-                    Text(String(format: "%.0f%%", (maxValue * 50)))
-                        .font(.caption2)
-                        .foregroundColor(.gray)
-                    Spacer()
-                    Text("0%")
-                        .font(.caption2)
-                        .foregroundColor(.gray)
-                }
-                .padding(.vertical, 8)
+                // Y-axis grid lines without labels
+                // Grid lines are kept for visual reference
             }
         }
         .frame(height: 100)
@@ -88,15 +70,14 @@ struct LineGraphView: View {
 
 struct LineGraphView_Previews: PreviewProvider {
     static var previews: some View {
-        let now = Date()
-        let sampleData = (0..<60).map { i -> (date: Date, value: Double) in
-            let time = now.addingTimeInterval(TimeInterval(-(60 - i) * 60))
-            let value = 0.5 + 0.3 * sin(Double(i) * 0.2)
-            return (date: time, value: value)
+        // Generate sample data with a sine wave pattern
+        let sampleData = (0..<24).map { i -> Double in
+            return 0.5 + 0.3 * sin(Double(i) * 0.25)
         }
         
-        LineGraphView(data: sampleData)
+        LineGraphView(data: sampleData, lineColor: .blue, showDots: true)
             .previewLayout(.sizeThatFits)
             .padding()
+            .previewDisplayName("Line Graph Preview")
     }
 }
