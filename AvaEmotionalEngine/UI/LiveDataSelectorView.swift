@@ -133,7 +133,10 @@ class EEGViewModel: ObservableObject {
 
 struct LiveEEGStreamView: View {
     @StateObject private var viewModel = EEGViewModel()
-    @State private var selectedBand: String? = nil
+    @State private var selectedBand: String? = nil // Keep for button highlighting
+    @State private var scrollViewContentSize: CGSize = .zero
+    @State private var lastUpdate = Date()
+    @State private var updateTimer: Timer? = nil
     
     let maxDataPoints = 256 // Muse sample rate is 256Hz, so this gives us 1 second of data
     
@@ -182,16 +185,29 @@ struct LiveEEGStreamView: View {
                     }
                     
                     // Individual band buttons
+                    Button(action: {
+                        // Toggle selection (select/deselect)
+                        selectedBand = selectedBand == nil ? "All" : nil
+                    }) {
+                        Text("All")
+                            .font(.subheadline)
+                            .padding(8)
+                            .background(selectedBand == nil ? Color.gray.opacity(0.5) : Color.gray.opacity(0.2))
+                            .cornerRadius(8)
+                            .foregroundColor(.white)
+                    }
+                    
                     ForEach(frequencyBands, id: \.name) { band in
                         Button(action: {
-                            selectedBand = band.name
+                            // Toggle selection (select/deselect)
+                            selectedBand = selectedBand == band.name ? nil : band.name
                         }) {
                             Text(band.name)
                                 .font(.subheadline)
                                 .padding(8)
-                                .background(selectedBand == band.name ? band.color.opacity(0.5) : Color.gray.opacity(0.2))
+                                .background(selectedBand == band.name ? band.color.opacity(0.7) : Color.gray.opacity(0.2))
                                 .cornerRadius(8)
-                                .foregroundColor(selectedBand == band.name ? .white : .primary)
+                                .foregroundColor(.white)
                         }
                     }
                 }
@@ -199,9 +215,12 @@ struct LiveEEGStreamView: View {
             }
             .padding(.vertical, 4)
             
-            ScrollView(showsIndicators: false) {
+            ScrollView(showsIndicators: true) {
                 VStack(spacing: 12) {
-                    // Display selected band or all bands
+                    // Add some padding at the top to prevent content from being hidden under the navigation bar
+                    Spacer().frame(height: 8)
+                    
+                    // Show selected band or all bands based on selection
                     if let selectedBand = selectedBand, let band = frequencyBands.first(where: { $0.name == selectedBand }) {
                         BandGraphView(
                             title: "\(band.name) (\(String(format: "%.1f-%.1f Hz", band.range.lowerBound, band.range.upperBound)))",
@@ -211,30 +230,52 @@ struct LiveEEGStreamView: View {
                             range: band.range,
                             unit: "μV"
                         )
-                        .frame(height: 200)
+                        .frame(height: 280) // Larger when showing single band
                         .padding(.horizontal)
                     } else {
-                        // Show all bands in a scrollable view
+                        // Show all bands
                         ForEach(frequencyBands, id: \.name) { band in
                             BandGraphView(
                                 title: "\(band.name) (\(String(format: "%.1f-%.1f Hz", band.range.lowerBound, band.range.upperBound)))",
                                 data: viewModel.bands.first(where: { $0.name == band.name })?.data ?? [],
                                 color: band.color,
-                                maxDataPoints: maxDataPoints / 2,
+                                maxDataPoints: maxDataPoints,
                                 range: band.range,
                                 unit: "μV"
                             )
-                            .frame(height: 80)
+                            .frame(height: 120)
                             .padding(.horizontal)
+                            .background(Color.black.opacity(0.2))
+                            .cornerRadius(8)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(band.color.opacity(0.3), lineWidth: 1)
+                            )
                         }
                     }
                 }
             }
             .padding(.vertical, 4)
+            .background(
+                GeometryReader { geometry in
+                    Color.clear
+                        .onAppear {
+                            scrollViewContentSize = geometry.size
+                        }
+                }
+            )
         }
         .navigationTitle("EEG Monitor")
         .onAppear {
-            // ViewModel handles the setup in init
+            // Start a timer to keep the view updating
+            updateTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { _ in
+                viewModel.objectWillChange.send()
+            }
+        }
+        .onDisappear {
+            // Invalidate timer when view disappears to prevent memory leaks
+            updateTimer?.invalidate()
+            updateTimer = nil
         }
     }
 }
@@ -250,7 +291,16 @@ struct BandGraphView: View {
     
     private var normalizedData: [Double] {
         guard !data.isEmpty else { return [] }
-        let maxValue = max(1.0, data.max() ?? 1.0) // Avoid division by zero
+        
+        // Special handling for Delta waves to make them more visible
+        if title.contains("Delta") {
+            let adjustedData = data.map { $0 * 2.0 } // Boost delta waves for better visibility
+            let maxValue = max(1.0, adjustedData.max() ?? 1.0)
+            return adjustedData.map { min($0 / maxValue, 1.0) } // Ensure values stay within 0...1
+        }
+        
+        // Standard normalization for other bands
+        let maxValue = max(1.0, data.max() ?? 1.0)
         return data.map { $0 / maxValue }
     }
     
@@ -259,12 +309,14 @@ struct BandGraphView: View {
             HStack {
                 Text(title)
                     .font(.subheadline)
-                    .foregroundColor(color)
+                    .foregroundColor(.white) // Changed to white for better visibility
+                    .opacity(0.9) // Slightly transparent for better contrast
                 Spacer()
                 if let lastValue = data.last {
                     Text(String(format: "%.1f \(unit)", lastValue))
                         .font(.caption.monospacedDigit())
-                        .foregroundColor(.primary)
+                        .foregroundColor(.white) // Changed to white
+                        .opacity(0.9) // Slightly transparent for better contrast
                 }
             }
             
@@ -300,7 +352,7 @@ struct BandGraphView: View {
                 }
             }
             .frame(height: 80)
-            .background(Color.gray.opacity(0.05))
+            .background(Color.black.opacity(0.3)) // Darker background for better contrast
             .cornerRadius(8)
             .overlay(
                 RoundedRectangle(cornerRadius: 8)
