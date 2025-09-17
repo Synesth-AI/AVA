@@ -181,19 +181,6 @@ struct LiveEEGStreamView: View {
                             .padding(8)
                             .background(selectedBand == nil ? Color.blue.opacity(0.5) : Color.gray.opacity(0.2))
                             .cornerRadius(8)
-                            .foregroundColor(selectedBand == nil ? .white : .primary)
-                    }
-                    
-                    // Individual band buttons
-                    Button(action: {
-                        // Toggle selection (select/deselect)
-                        selectedBand = selectedBand == nil ? "All" : nil
-                    }) {
-                        Text("All")
-                            .font(.subheadline)
-                            .padding(8)
-                            .background(selectedBand == nil ? Color.gray.opacity(0.5) : Color.gray.opacity(0.2))
-                            .cornerRadius(8)
                             .foregroundColor(.white)
                     }
                     

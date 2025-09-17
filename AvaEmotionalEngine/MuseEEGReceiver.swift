@@ -11,6 +11,9 @@ final class MuseEEGReceiver: NSObject, ObservableObject {
     // MARK: - Public Publishers
     /// The most recent band-power reading calculated from incoming EEG packets
     @Published private(set) var latestReading: EEGReading = .init(alpha: 0, beta: 0, gamma: 0, theta: 0, delta: 0)
+    
+    /// The most recent FFT spectrum
+    @Published private(set) var latestSpectrum: [Double] = []
 
     // MARK: - Private Properties
     private weak var muse: IXNMuse?
@@ -111,12 +114,17 @@ private extension MuseEEGReceiver {
             let sum = slice.reduce(0, +)
             return Double(sum) / Double(slice.count)
         }
+        // Convert magnitudes to Double and store the spectrum up to 50Hz
+        let maxFreqIndex = min(Int(50.0 / (Double(sampleRate) / Double(n))), magnitudes.count - 1)
+        let spectrum = (0...maxFreqIndex).map { Double(magnitudes[$0]) }
+        
         return EEGReading(
             alpha: power(from: 8,  to: 13),
             beta:  power(from: 13, to: 30),
             gamma: power(from: 30, to: 50),
             theta: power(from: 4,  to: 8),
-            delta: power(from: 0.5, to: 4)
+            delta: power(from: 0.5, to: 4),
+            spectrum: spectrum
         )
     }
 }

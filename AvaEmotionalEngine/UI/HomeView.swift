@@ -115,15 +115,6 @@ struct HomeView: View {
                         BatteryIndicatorView()
                     }
                     
-                    // Live data button
-                    Button(action: {
-                        isShowingLiveDataSelector = true
-                    }) {
-                        Image(systemName: "chart.line.uptrend.xyaxis")
-                            .resizable()
-                            .frame(width: 24, height: 24)
-                            .foregroundColor(.black)
-                    }
                     Image(systemName: "person.crop.circle")
                         .resizable()
                         .frame(width: 40, height: 40)
@@ -252,15 +243,6 @@ struct HomeView: View {
                 }
                 .padding(.vertical, 12)
                 .frame(maxWidth: .infinity)
-                
-                // Top right time badge
-                Text(getCurrentTime())
-                    .font(.caption2)
-                    .foregroundColor(.black)
-                    .padding(6)
-                    .background(Color.white)
-                    .cornerRadius(8)
-                    .padding([.top, .trailing], 12)
             }
             .padding(.horizontal)
             .padding(.top, 8)
