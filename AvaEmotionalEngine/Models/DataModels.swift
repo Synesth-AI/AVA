@@ -4,11 +4,21 @@ import Foundation
 
 /// Represents EEG reading data from a Muse headset
 public struct EEGReading {
+    // Band powers
     var alpha: Double
     var beta: Double
     var gamma: Double
     var theta: Double
     var delta: Double
+    
+    // Raw data
+    var rawSamples: [Double] = []
+    var spectrum: [Double] = []
+    
+    // OSC Configuration
+    static let oscBaseAddress = "/muse/eeg"
+    static let oscHost = "127.0.0.1"
+    static let oscPort: UInt16 = 5005
     
     // Computed property for beta-gamma chaos metric
     public var betaGammaChaos: Double {

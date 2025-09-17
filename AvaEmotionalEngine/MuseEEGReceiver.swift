@@ -1,5 +1,6 @@
 import Foundation
 import Accelerate
+import OSCKit
 
 /// Streams live EEG data from a connected Muse headset and computes band powers (α, β, γ, θ, δ)
 /// The class registers itself as an `IXNMuseDataListener` and updates `latestReading` whenever a
@@ -15,8 +16,9 @@ final class MuseEEGReceiver: NSObject, ObservableObject {
     /// The most recent FFT spectrum
     @Published private(set) var latestSpectrum: [Double] = []
 
-    // MARK: - Private Properties
+    // MARK: - Properties
     private weak var muse: IXNMuse?
+    private let oscManager = OSCManager.shared
     @Published private(set) var isStreaming: Bool = false
     private let sampleRate: Int = 256          // Muse 2 & S: 256 Hz
     private let windowSize: Int = 256          // 1 second window
@@ -51,8 +53,13 @@ extension MuseEEGReceiver: IXNMuseDataListener {
     // Handle data packets (EEG)
     func receive(_ packet: IXNMuseDataPacket?, muse: IXNMuse?) {
         guard let packet = packet, packet.packetType() == .eeg else { return }
-        // `packet.values()` returns NSNumber array for 4 EEG channels; use channel 0 (TP9) here
-        guard let first = packet.values().first else { return }
+        
+        // Get all EEG channels
+        guard let values = packet.values() as? [NSNumber] else { return }
+        let samples = values.map { $0.doubleValue }
+        
+        // For now, use the first channel (TP9) for band power calculations
+        guard let first = values.first else { return }
         let µV = first.doubleValue
 
         // Maintain circular buffer of `windowSize` samples
@@ -61,7 +68,20 @@ extension MuseEEGReceiver: IXNMuseDataListener {
 
         // Only compute band powers when the buffer is full
         guard circularBuffer.count == windowSize else { return }
-        latestReading = computeBandPowers(from: circularBuffer)
+        
+        // Compute band powers and spectrum
+        let reading = computeBandPowers(from: circularBuffer)
+        
+        // Update with raw samples and spectrum
+        var updatedReading = reading
+        updatedReading.rawSamples = circularBuffer
+        
+        // Store the latest reading
+        latestReading = updatedReading
+        latestSpectrum = reading.spectrum
+        
+        // Send data via OSC
+        oscManager.sendEEGData(updatedReading)
         // Throttled console log (once per second)
         let now = Date()
         if now.timeIntervalSince(lastLogTime) >= 1 {
