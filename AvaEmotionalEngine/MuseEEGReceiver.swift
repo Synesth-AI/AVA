@@ -20,15 +20,17 @@ final class MuseEEGReceiver: NSObject, ObservableObject {
     @Published private(set) var isStreaming: Bool = false
     private let sampleRate: Int = 256          // Muse 2 & S: 256 Hz
     private let windowSize: Int = 256          // 1 second window
+    private let channelCount: Int = 4          // TP9, AF7, AF8, TP10
     private var lastLogTime: Date = .distantPast
-    private var circularBuffer: [Double] = []  // Sliding window of raw EEG µV values (FP1 electrode)
+    private var circularBuffers: [[Double]] = []  // Array of sliding windows for each channel
 
     // MARK: - Lifecycle
     /// Call this after a Muse is connected to begin streaming.
     func startStreaming(from muse: IXNMuse) {
         stopStreaming() // in case we're already registered
         self.muse = muse
-        circularBuffer.removeAll(keepingCapacity: true)
+        // Initialize circular buffers for each channel
+        circularBuffers = Array(repeating: [], count: channelCount)
         muse.register(self, type: .eeg)
         isStreaming = true
     }
@@ -37,7 +39,7 @@ final class MuseEEGReceiver: NSObject, ObservableObject {
     func stopStreaming() {
         muse?.unregisterDataListener(self, type: .eeg)
         muse = nil
-        circularBuffer.removeAll()
+        circularBuffers.removeAll()
         latestReading = .init(alpha: 0, beta: 0, gamma: 0, theta: 0, delta: 0)
         isStreaming = false
     }
@@ -51,21 +53,55 @@ extension MuseEEGReceiver: IXNMuseDataListener {
     // Handle data packets (EEG)
     func receive(_ packet: IXNMuseDataPacket?, muse: IXNMuse?) {
         guard let packet = packet, packet.packetType() == .eeg else { return }
-        // `packet.values()` returns NSNumber array for 4 EEG channels; use channel 0 (TP9) here
-        guard let first = packet.values().first else { return }
-        let µV = first.doubleValue
-
-        // Maintain circular buffer of `windowSize` samples
-        if circularBuffer.count >= windowSize { circularBuffer.removeFirst() }
-        circularBuffer.append(µV)
-
-        // Only compute band powers when the buffer is full
-        guard circularBuffer.count == windowSize else { return }
-        latestReading = computeBandPowers(from: circularBuffer)
+        
+        // Get all channel values
+        let values = packet.values()
+        guard values.count >= channelCount else { return }
+        
+        // Update circular buffers for each channel
+        for channel in 0..<channelCount {
+            let µV = values[channel].doubleValue
+            
+            // Maintain circular buffer of `windowSize` samples for each channel
+            if circularBuffers[channel].count >= windowSize {
+                circularBuffers[channel].removeFirst()
+            }
+            circularBuffers[channel].append(µV)
+        }
+        
+        // Only compute band powers when all buffers are full
+        guard circularBuffers.allSatisfy({ $0.count == windowSize }) else { return }
+        
+        // Calculate average band powers across all channels
+        var combinedReading = EEGReading(alpha: 0, beta: 0, gamma: 0, theta: 0, delta: 0)
+        for channel in 0..<channelCount {
+            let channelReading = computeBandPowers(from: circularBuffers[channel])
+            combinedReading.alpha += channelReading.alpha
+            combinedReading.beta += channelReading.beta
+            combinedReading.gamma += channelReading.gamma
+            combinedReading.theta += channelReading.theta
+            combinedReading.delta += channelReading.delta
+        }
+        
+        // Average the readings from all channels
+        combinedReading.alpha /= Double(channelCount)
+        combinedReading.beta /= Double(channelCount)
+        combinedReading.gamma /= Double(channelCount)
+        combinedReading.theta /= Double(channelCount)
+        combinedReading.delta /= Double(channelCount)
+        
+        latestReading = combinedReading
+        
         // Throttled console log (once per second)
         let now = Date()
         if now.timeIntervalSince(lastLogTime) >= 1 {
-            print(String(format: "EEG α: %.2f β: %.2f γ: %.2f θ: %.2f δ: %.2f", latestReading.alpha, latestReading.beta, latestReading.gamma, latestReading.theta, latestReading.delta))
+            print(String(format: "EEG (Averaged across %d channels) α: %.2f β: %.2f γ: %.2f θ: %.2f δ: %.2f", 
+                         channelCount, 
+                         latestReading.alpha, 
+                         latestReading.beta, 
+                         latestReading.gamma, 
+                         latestReading.theta, 
+                         latestReading.delta))
             lastLogTime = now
         }
     }
@@ -123,8 +159,7 @@ private extension MuseEEGReceiver {
             beta:  power(from: 13, to: 30),
             gamma: power(from: 30, to: 50),
             theta: power(from: 4,  to: 8),
-            delta: power(from: 0.5, to: 4),
-            spectrum: spectrum
+            delta: power(from: 0.5, to: 4)
         )
     }
 }
