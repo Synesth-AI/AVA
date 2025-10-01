@@ -1,5 +1,6 @@
 import SwiftUI
 import Combine
+import Foundation
 
 private struct BatteryIndicatorView: View {
     @ObservedObject private var museManager = MuseManager.shared
@@ -28,9 +29,9 @@ private struct BatteryIndicatorView: View {
                 .foregroundColor(textColor)
             
             Text("\(batteryLevel)%")
-                .font(.caption)
+                .font(AppTextStyles.caption)
                 .foregroundColor(textColor)
-                .frame(minWidth: 30, alignment: .trailing)
+                .frame(minWidth: 50, alignment: .trailing)
         }
     }
 }
@@ -135,7 +136,7 @@ struct HomeView: View {
                 HStack {
                     Text(showLiveData ? "Live Brain Waves" : "Live KR Score")
                         .foregroundColor(.white)
-                        .font(.subheadline)
+                        .appHeadline()
                         .padding(.leading, 16)
                         .padding(.top, 16)
                     
@@ -173,7 +174,7 @@ struct HomeView: View {
                         ZStack {
                             Circle()
                                 .stroke(Color.white.opacity(0.2), lineWidth: 6)
-                                .frame(width: 80, height: 80)
+                                .frame(width: 140, height: 140)
                             
                             Circle()
                                 .trim(from: 0.0, to: CGFloat(min(metricsManager.krScore, 1.0)))
@@ -188,18 +189,18 @@ struct HomeView: View {
                                     ),
                                     style: StrokeStyle(lineWidth: 8, lineCap: .round)
                                 )
-                                .frame(width: 80, height: 80)
+                                .frame(width: 120, height: 120)
                                 .rotationEffect(Angle(degrees: -90))
                                 .animation(.easeInOut(duration: 1.0), value: metricsManager.krScore)
                             
-                            VStack(spacing: 2) {
+                            VStack(spacing: 6) {
                                 Text(String(format: "%.2f", metricsManager.krScore))
-                                    .font(.title2)
+                                    .appTitle()
                                     .fontWeight(.bold)
                                     .foregroundColor(.white)
                                 Text(String(format: "Raw: %.2f", metricsManager.rawKrScore))
-                                    .font(.caption2)
-                                    .foregroundColor(.white.opacity(0.7))
+                                    .appCaption()
+                                    .foregroundColor(.white.opacity(0.9))
                             }
                         }
                     }
@@ -299,8 +300,7 @@ struct HomeView: View {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
                     Text("Today's Summary")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
+                        .font(.system(size: 23, weight: .semibold, design: .rounded))
                     Spacer()
                     Text("KXRP \(metricsManager.selectedEquationIndex)")
                         .font(.caption)
@@ -398,8 +398,7 @@ struct HomeView: View {
                 }) {
                     HStack {
                         Text("View Detailed Analysis")
-                            .font(.caption)
-                            .fontWeight(.medium)
+                            .font(.system(size: 22, weight: .medium, design: .rounded))
                         Spacer()
                         Image(systemName: "chevron.right")
                             .font(.caption2)
@@ -466,7 +465,7 @@ struct HomeView: View {
                             Image(systemName: Tab.home.rawValue)
                                 .font(.system(size: 22))
                             Text(Tab.home.title)
-                                .font(.system(size: 11, weight: .medium))
+                                .font(.system(size: 14, weight: .medium))
                         }
                         .foregroundColor(selectedTab == .home ? .blue : .gray)
                         .frame(maxWidth: .infinity)
@@ -483,7 +482,7 @@ struct HomeView: View {
                             Image(systemName: Tab.sessions.rawValue)
                                 .font(.system(size: 22))
                             Text(Tab.sessions.title)
-                                .font(.system(size: 11, weight: .medium))
+                                .font(.system(size: 14, weight: .medium))
                         }
                         .foregroundColor(selectedTab == .sessions ? .blue : .gray)
                         .frame(maxWidth: .infinity)
@@ -500,7 +499,7 @@ struct HomeView: View {
                             Image(systemName: Tab.journal.rawValue)
                                 .font(.system(size: 22))
                             Text(Tab.journal.title)
-                                .font(.system(size: 11, weight: .medium))
+                                .font(.system(size: 14, weight: .medium))
                         }
                         .foregroundColor(selectedTab == .journal ? .blue : .gray)
                         .frame(maxWidth: .infinity)
@@ -517,7 +516,7 @@ struct HomeView: View {
                             Image(systemName: Tab.sync.rawValue)
                                 .font(.system(size: 22))
                             Text(Tab.sync.title)
-                                .font(.system(size: 11, weight: .medium))
+                                .font(.system(size: 14, weight: .medium))
                         }
                         .foregroundColor(selectedTab == .sync ? .blue : .gray)
                         .frame(maxWidth: .infinity)
