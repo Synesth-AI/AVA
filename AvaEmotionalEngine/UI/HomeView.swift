@@ -88,6 +88,13 @@ struct HomeView: View {
         return formatter.string(from: Date())
     }
     
+    private func getCurrentDateString() -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .full
+        formatter.timeStyle = .none
+        return formatter.string(from: Date())
+    }
+    
     var body: some View {
         // This will cause the view to update when metricsManager's published properties change
         let _ = metricsManager.objectWillChange.sink { _ in
@@ -105,7 +112,7 @@ struct HomeView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Hi \(appState.userName.isEmpty ? "there" : appState.userName)")
                         .font(.title2).fontWeight(.semibold)
-                    Text("Sunday 17th June, 2025")
+                    Text(getCurrentDateString())
                         .font(.subheadline)
                         .foregroundColor(.gray)
                 }
@@ -116,10 +123,12 @@ struct HomeView: View {
                         BatteryIndicatorView()
                     }
                     
-                    Image(systemName: "person.crop.circle")
-                        .resizable()
-                        .frame(width: 40, height: 40)
-                        .clipShape(Circle())
+                    NavigationLink(destination: SettingsView()) {
+                        Image(systemName: "person.crop.circle")
+                            .resizable()
+                            .frame(width: 40, height: 40)
+                            .clipShape(Circle())
+                    }
                 }
                 .padding(.horizontal, 20)
                 }

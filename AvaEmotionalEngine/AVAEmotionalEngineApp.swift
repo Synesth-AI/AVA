@@ -114,8 +114,10 @@ struct AVAEmotionalEngineApp: App {
                     PermissionsView()
                         .environmentObject(appState)
                 } else {
-                    HomeView()
-                        .environmentObject(appState)
+                    NavigationView {
+                        HomeView()
+                            .environmentObject(appState)
+                    }
                 }
             }
             .onAppear {

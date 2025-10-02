@@ -1,6 +1,6 @@
 import Foundation
 
-struct Device: Identifiable, Equatable {
+struct Device: Identifiable, Codable, Equatable {
     let id: UUID
     let name: String
     let signalStrength: Int
@@ -17,6 +17,27 @@ struct Device: Identifiable, Equatable {
     
     static func == (lhs: Device, rhs: Device) -> Bool {
         return lhs.id == rhs.id
+    }
+    // Custom CodingKeys to ignore muse in Codable
+    enum CodingKeys: String, CodingKey {
+        case id, name, signalStrength, isConnected
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        signalStrength = try container.decode(Int.self, forKey: .signalStrength)
+        isConnected = try container.decode(Bool.self, forKey: .isConnected)
+        muse = nil // Not codable
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(name, forKey: .name)
+        try container.encode(signalStrength, forKey: .signalStrength)
+        try container.encode(isConnected, forKey: .isConnected)
     }
 }
 
