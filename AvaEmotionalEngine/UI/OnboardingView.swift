@@ -209,15 +209,17 @@ struct OnboardingView: View {
                         
                         // Save the name and complete onboarding
                         appState.userName = trimmedName
-                        // Don't mark device setup as complete yet
-                        appState.hasCompletedDeviceSetup = false
+                        // Mark setup flows as completed so app goes to Home on next launch
+                        appState.hasCompletedDeviceSetup = true
+                        appState.hasCompletedPermissionsSetup = true
                         
                         withAnimation(.easeInOut(duration: 0.3)) {
                             appState.hasCompletedOnboarding = true
                             // Save the state
                             UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
                             UserDefaults.standard.set(trimmedName, forKey: "userName")
-                            UserDefaults.standard.set(false, forKey: "hasCompletedDeviceSetup")
+                            UserDefaults.standard.set(true, forKey: "hasCompletedDeviceSetup")
+                            UserDefaults.standard.set(true, forKey: "hasCompletedPermissionsSetup")
                         }
                     }
                 }) {

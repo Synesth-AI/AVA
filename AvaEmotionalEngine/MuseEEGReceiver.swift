@@ -103,6 +103,8 @@ extension MuseEEGReceiver: IXNMuseDataListener {
                          latestReading.theta, 
                          latestReading.delta))
             lastLogTime = now
+            // Persist one sample per second
+            EEGStorage.shared.insert(timestamp: now.timeIntervalSince1970, reading: latestReading)
         }
     }
 

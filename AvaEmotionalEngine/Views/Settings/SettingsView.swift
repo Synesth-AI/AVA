@@ -11,6 +11,8 @@ struct SettingsView: View {
     @StateObject private var museManager = MuseManager.shared
     @State private var isConnecting = false
     @State private var connectingDevice: Device?
+    @State private var exportURL: URL?
+    @State private var showShareSheet = false
 
     var body: some View {
         ZStack {
@@ -71,7 +73,11 @@ struct SettingsView: View {
                                     .font(.system(size: 17, weight: .regular))
                                 Spacer()
                                 Button(action: {
-                                    // Export action
+                                    EEGStorage.shared.exportCSV { url in
+                                        guard let url = url else { return }
+                                        exportURL = url
+                                        showShareSheet = true
+                                    }
                                 }) {
                                     HStack(spacing: 4) {
                                         Image(systemName: "square.and.arrow.up")
@@ -252,20 +258,7 @@ struct SettingsView: View {
                     .padding(.bottom, 24)
                 }
 
-                // Bottom Navigation Bar
-                Divider()
-                HStack {
-                    NavBarItem(icon: "house", label: "Home", selected: true)
-                    NavBarItem(icon: "timer", label: "Sessions")
-                    NavBarItem(icon: "book.closed", label: "Journal")
-                    NavBarItem(icon: "arrow.2.circlepath", label: "Sync")
-                }
-                .frame(height: 60)
-                .background(Color(.systemGray6))
-                .cornerRadius(18)
-                .shadow(color: Color.black.opacity(0.04), radius: 4, x: 0, y: -2)
-                .padding(.horizontal, 0)
-                .padding(.bottom, 0)
+                // Removed bottom navigation bar for Settings
             }
         }
         .font(.custom("SF Pro", size: 17))
@@ -275,6 +268,13 @@ struct SettingsView: View {
         }
         .onDisappear {
             museManager.stopScanning()
+        }
+        .sheet(isPresented: $showShareSheet) {
+            if let url = exportURL {
+                ActivityView(activityItems: [url])
+            } else {
+                ActivityView(activityItems: [])
+            }
         }
     }
 }

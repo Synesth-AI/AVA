@@ -13,18 +13,19 @@ class AppState: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     
     init() {
-        // Reset all onboarding states on every launch
-        UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
-        UserDefaults.standard.set(false, forKey: "hasCompletedDeviceSetup")
-        UserDefaults.standard.set(false, forKey: "hasCompletedPermissionsSetup")
-        UserDefaults.standard.set("", forKey: "userName")
-        
-        // Initialize with default values (onboarding not completed)
+        // Load persisted values (do not reset on launch)
+        let defaults = UserDefaults.standard
+        let persistedOnboarding = defaults.bool(forKey: "hasCompletedOnboarding")
+        let persistedDeviceSetup = defaults.bool(forKey: "hasCompletedDeviceSetup")
+        let persistedPermissionsSetup = defaults.bool(forKey: "hasCompletedPermissionsSetup")
+        let persistedUserName = defaults.string(forKey: "userName") ?? ""
+
+        // Initialize with persisted values
         _isSplashActive = Published(initialValue: true)
-        _hasCompletedOnboarding = Published(initialValue: false)
-        _userName = Published(initialValue: "")
-        _hasCompletedDeviceSetup = Published(initialValue: false)
-        _hasCompletedPermissionsSetup = Published(initialValue: false)
+        _hasCompletedOnboarding = Published(initialValue: persistedOnboarding)
+        _userName = Published(initialValue: persistedUserName)
+        _hasCompletedDeviceSetup = Published(initialValue: persistedDeviceSetup)
+        _hasCompletedPermissionsSetup = Published(initialValue: persistedPermissionsSetup)
         _isLogoAnimating = Published(initialValue: false)
         
         // Set up property observers

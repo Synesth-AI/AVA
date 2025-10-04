@@ -47,7 +47,6 @@ struct EquationSelectionView: View {
                 makeEquationRow(equation)
             }
             .navigationTitle("Select KXRP Equation")
-            .navigationBarItems(trailing: doneButton)
         }
     }
 }
