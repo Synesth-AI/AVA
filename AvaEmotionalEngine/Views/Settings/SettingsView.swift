@@ -8,6 +8,7 @@ struct SettingsView: View {
     @State private var notificationsEnabled = false
     @State private var microphoneEnabled = false
     @StateObject private var connectedDevicesManager = ConnectedDevicesManager()
+    @StateObject private var museManager = MuseManager.shared
     @State private var isConnecting = false
     @State private var connectingDevice: Device?
 
@@ -91,39 +92,124 @@ struct SettingsView: View {
                             iconColor: .green,
                             title: "Connected Devices"
                         ) {
-                            ForEach(connectedDevicesManager.devices) { device in
-                                HStack {
-                                    Text(device.name)
-                                        .font(.system(size: 17))
-                                    Spacer()
-                                    Button(action: {
-                                        if device.isConnected {
-                                            connectedDevicesManager.updateConnection(for: device, isConnected: false)
-                                        } else {
-                                            connectingDevice = device
-                                            isConnecting = true
-                                            // Simulate connection delay
-                                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                                                connectedDevicesManager.updateConnection(for: device, isConnected: true)
-                                                isConnecting = false
+                            // Decide which UI to show based on connection
+                            if museManager.connectionState.isConnected {
+                                // Connected panel (clean, minimal)
+                                let name = museManager.connectionState.deviceName
+                                VStack(alignment: .leading, spacing: 12) {
+                                    HStack(spacing: 12) {
+                                        Image(systemName: "headphones")
+                                            .font(.system(size: 20, weight: .semibold))
+                                            .foregroundColor(.green)
+                                            .padding(10)
+                                            .background(Color.green.opacity(0.12))
+                                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(name.isEmpty ? "Muse Device" : name)
+                                                .font(.system(size: 17, weight: .semibold))
+                                            HStack(spacing: 6) {
+                                                Text("Connected")
+                                                    .font(.caption)
+                                                    .foregroundColor(.green)
+                                                    .padding(.horizontal, 8)
+                                                    .padding(.vertical, 3)
+                                                    .background(Color.green.opacity(0.12))
+                                                    .clipShape(Capsule())
+                                                if museManager.batteryLevel > 0 {
+                                                    HStack(spacing: 4) {
+                                                        Image(systemName: "battery.100")
+                                                        Text("\(museManager.batteryLevel)%")
+                                                    }
+                                                    .font(.caption2)
+                                                    .foregroundColor(.green)
+                                                }
                                             }
                                         }
-                                    }) {
-                                        Text(device.isConnected ? "Disconnect" : "Connect")
-                                            .font(.system(size: 15, weight: .semibold))
-                                            .foregroundColor(device.isConnected ? .gray : .blue)
-                                            .padding(.horizontal, 16)
-                                            .padding(.vertical, 6)
-                                            .background((device.isConnected ? Color.gray : Color.blue).opacity(0.1))
-                                            .clipShape(Capsule())
+                                        Spacer()
                                     }
-                                    .disabled(isConnecting && connectingDevice == device)
-                                    Button(action: {
-                                        connectedDevicesManager.removeDevice(device)
-                                    }) {
-                                        Image(systemName: "trash")
+                                    HStack {
+                                        Button(action: { museManager.disconnect() }) {
+                                            Text("Disconnect")
+                                                .font(.system(size: 15, weight: .semibold))
+                                                .padding(.horizontal, 16)
+                                                .padding(.vertical, 8)
+                                                .background(Color.red.opacity(0.12))
+                                                .foregroundColor(.red)
+                                                .clipShape(Capsule())
+                                        }
+                                        Spacer()
+                                    }
+                                }
+                                .padding(12)
+                                .background(Color.white)
+                                .cornerRadius(14)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 14)
+                                        .stroke(Color.gray.opacity(0.12), lineWidth: 1)
+                                )
+                            } else {
+                                // Not connected: scan & list
+                                HStack {
+                                    Button(action: { museManager.startScanning() }) {
+                                        HStack(spacing: 8) {
+                                            if museManager.isScanning {
+                                                ProgressView()
+                                                    .progressViewStyle(CircularProgressViewStyle())
+                                                    .scaleEffect(0.8)
+                                            } else {
+                                                Image(systemName: "arrow.clockwise")
+                                            }
+                                            Text(museManager.isScanning ? "Scanning…" : "Scan for Devices")
+                                        }
+                                        .padding(.horizontal, 12)
+                                        .background(Color.green.opacity(0.12))
+                                        .foregroundColor(.green)
+                                        .clipShape(Capsule())
+                                    }
+                                    Spacer()
+                                    switch museManager.connectionState {
+                                    case .connecting(let name):
+                                        Text("Connecting to \(name)…").font(.caption).foregroundColor(.gray)
+                                    case .failed(_, let error):
+                                        Text(error).font(.caption).foregroundColor(.orange)
+                                    default:
+                                        EmptyView()
+                                    }
+                                }
+                                .padding(.bottom, 4)
+                                if museManager.devices.isEmpty {
+                                    HStack {
+                                        Image(systemName: "antenna.radiowaves.left.and.right")
                                             .foregroundColor(.gray)
-                                            .padding(.leading, 4)
+                                        Text("No devices found. Ensure Bluetooth is ON and tap 'Scan for Devices'.")
+                                            .font(.caption)
+                                            .foregroundColor(.gray)
+                                    }
+                                } else {
+                                    ForEach(museManager.devices.sorted { $0.name < $1.name }) { device in
+                                        HStack {
+                                            Text(device.name)
+                                                .font(.system(size: 17))
+                                            Spacer()
+                                            let isConnectingToThis = (isConnecting && connectingDevice == device)
+                                            Button(action: {
+                                                connectingDevice = device
+                                                isConnecting = true
+                                                museManager.connect(to: device)
+                                                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                                                    isConnecting = false
+                                                }
+                                            }) {
+                                                Text(isConnectingToThis ? "Connecting…" : "Connect")
+                                                    .font(.system(size: 15, weight: .semibold))
+                                                    .foregroundColor(.blue)
+                                                    .padding(.horizontal, 16)
+                                                    .padding(.vertical, 6)
+                                                    .background(Color.blue.opacity(0.1))
+                                                    .clipShape(Capsule())
+                                            }
+                                            .disabled(isConnectingToThis)
+                                        }
                                     }
                                 }
                             }
@@ -183,6 +269,13 @@ struct SettingsView: View {
             }
         }
         .font(.custom("SF Pro", size: 17))
+        .onAppear {
+            // Begin scanning automatically when the settings screen opens
+            museManager.startScanning()
+        }
+        .onDisappear {
+            museManager.stopScanning()
+        }
     }
 }
 

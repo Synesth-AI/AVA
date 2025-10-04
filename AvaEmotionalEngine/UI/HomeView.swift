@@ -439,6 +439,17 @@ struct HomeView: View {
         )
         .ignoresSafeArea()
     )
+    // Overlay the journal view over the whole screen when selected
+    .overlay(
+        Group {
+            if selectedTab == .journal {
+                JournalsInsightsView()
+                    .edgesIgnoringSafeArea(.all)
+                    .transition(.opacity)
+            }
+        }
+        .zIndex(1000)
+    )
     .sheet(isPresented: $isShowingEquationSelection) {
             NavigationView {
                 EquationSelectionView()
@@ -457,6 +468,7 @@ struct HomeView: View {
                     })
             }
         }
+        // Removed fullScreenCover; overlay handles presentation
         .safeAreaInset(edge: .bottom) {
             // Bottom Navigation Bar
             VStack(spacing: 0) {
@@ -500,6 +512,7 @@ struct HomeView: View {
                     
                     // Journal Button
                     Button(action: {
+                        print("Journal tab tapped")
                         withAnimation(.easeInOut(duration: 0.1)) {
                             selectedTab = .journal
                         }
@@ -542,6 +555,34 @@ struct HomeView: View {
         }
         .sheet(isPresented: $isShowingLiveDataSelector) {
             LiveDataSelectorView()
+        }
+        // Main content switches based on selectedTab
+        Group {
+            switch selectedTab {
+            case .home:
+                // Home/dashboard content
+                ScrollView {
+                    VStack(spacing: 0) {
+                        // Add your home/dashboard content here
+                        Text("Home View Content")
+                            .font(.largeTitle)
+                            .padding()
+                    }
+                }
+            case .sessions:
+                // Sessions view placeholder
+                Text("Sessions View")
+                    .font(.largeTitle)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            case .journal:
+                // Render nothing here; fullScreenCover handles presentation
+                EmptyView()
+            case .sync:
+                // Sync view placeholder
+                Text("Sync View")
+                    .font(.largeTitle)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
         }
     }
 }
