@@ -407,13 +407,13 @@ struct HomeView: View {
                 }) {
                     HStack {
                         Text("View Detailed Analysis")
-                            .font(.system(size: 22, weight: .medium, design: .rounded))
+                            .font(.system(size: 18, weight: .medium, design: .rounded))
                         Spacer()
                         Image(systemName: "chevron.right")
                             .font(.caption2)
                     }
                     .foregroundColor(.blue)
-                    .padding(8)
+                    .padding()
                     .frame(maxWidth: .infinity)
                     .background(Color.blue.opacity(0.1))
                     .cornerRadius(8)

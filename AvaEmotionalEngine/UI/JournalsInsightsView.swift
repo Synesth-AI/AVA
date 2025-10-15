@@ -290,17 +290,26 @@ struct PatternsScreen: View {
                     title: "Peak Focus Window",
                     description: "You perform best between 9:00-11:00 AM with an average focus score of 84."
                 )
+                .frame(maxWidth: .infinity)
+                .fixedSize(horizontal: false, vertical: true)
+                
                 InsightCard(
                     title: "Intervention Effectiveness",
                     description: "Calming audio sounds improve your score by 12 points."
                 )
+                .frame(maxWidth: .infinity)
+                .fixedSize(horizontal: false, vertical: true)
+                
                 InsightCard(
                     title: "Recovery Pattern",
                     description: "Your calm score peaks after 5-minute breaks, ideal for restoration."
                 )
+                .frame(maxWidth: .infinity)
+                .fixedSize(horizontal: false, vertical: true)
             }
+            .frame(maxWidth: .infinity)
             .padding(.horizontal, 24)
-            .padding(.top, 8)
+            .padding(.top, 32)
         }
     }
 }
@@ -373,6 +382,7 @@ struct InsightCard: View {
                 .font(.system(size: 13))
                 .foregroundColor(.gray)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 18)
