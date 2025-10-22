@@ -252,7 +252,6 @@ struct LiveEEGStreamView: View {
                 }
             )
         }
-        .navigationTitle("EEG Monitor")
         .onAppear {
             // Start a timer to keep the view updating
             updateTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { _ in

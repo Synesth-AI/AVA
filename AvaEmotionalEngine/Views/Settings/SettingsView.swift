@@ -34,7 +34,8 @@ struct SettingsView: View {
                         .font(.system(size: 15, weight: .regular, design: .rounded))
                         .foregroundColor(.gray)
                 }
-                .padding(.horizontal)
+                .padding(.leading)
+                .padding(.trailing, 32)
                 .padding(.top, 24)
                 .padding(.bottom, 8)
 
@@ -253,7 +254,8 @@ struct SettingsView: View {
                             }
                         }
                     }
-                    .padding(.horizontal)
+                    .padding(.leading)
+                    .padding(.trailing, 32)
                     .padding(.top, 8)
                     .padding(.bottom, 24)
                 }

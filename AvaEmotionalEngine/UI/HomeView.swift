@@ -111,7 +111,7 @@ struct HomeView: View {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Hi \(appState.userName.isEmpty ? "there" : appState.userName)")
-                        .font(.title2).fontWeight(.semibold)
+                        .font(.system(size: 24)).fontWeight(.bold)
                     Text(getCurrentDateString())
                         .font(.subheadline)
                         .foregroundColor(.gray)
@@ -124,13 +124,13 @@ struct HomeView: View {
                     }
                     
                     NavigationLink(destination: SettingsView()) {
-                        Image(systemName: "person.crop.circle")
+                        Image(systemName: "person.crop.circle.fill")
                             .resizable()
-                            .frame(width: 40, height: 40)
+                            .frame(width: 44, height: 44)
+                            .foregroundColor(.gray.opacity(0.6))
                             .clipShape(Circle())
                     }
                 }
-                .padding(.horizontal, 20)
                 }
             }
             .padding([.horizontal, .top])
@@ -309,7 +309,7 @@ struct HomeView: View {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
                     Text("Today's Summary")
-                        .font(.system(size: 23, weight: .semibold, design: .rounded))
+                        .font(.system(size: 18, weight: .semibold, design: .rounded))
                     Spacer()
                     Text("KXRP \(metricsManager.selectedEquationIndex)")
                         .font(.caption)
@@ -403,7 +403,14 @@ struct HomeView: View {
                 
                 // View Details Button
                 Button(action: {
-                    // Action to view more detailed stats
+                    // Navigate to journals screen on patterns tab
+                    withAnimation {
+                        selectedTab = .journal
+                    }
+                    // Set journals to show patterns tab (this will be handled by JournalsInsightsView)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        // The patterns tab is the default, so no additional setup needed
+                    }
                 }) {
                     HStack {
                         Text("View Detailed Analysis")
@@ -411,11 +418,12 @@ struct HomeView: View {
                         Spacer()
                         Image(systemName: "chevron.right")
                             .font(.caption2)
+                            .foregroundColor(.white)
                     }
-                    .foregroundColor(.blue)
+                    .foregroundColor(.white)
                     .padding()
                     .frame(maxWidth: .infinity)
-                    .background(Color.blue.opacity(0.1))
+                    .background(Color(red: 46/255, green: 105/255, blue: 195/255))
                     .cornerRadius(8)
                 }
             }
@@ -444,6 +452,13 @@ struct HomeView: View {
         Group {
             if selectedTab == .journal {
                 JournalsInsightsView()
+                    .environmentObject(metricsManager)
+                    .edgesIgnoringSafeArea(.all)
+                    .transition(.opacity)
+            }
+            if selectedTab == .sessions {
+                SessionsView()
+                    .environmentObject(metricsManager)
                     .edgesIgnoringSafeArea(.all)
                     .transition(.opacity)
             }
@@ -570,10 +585,8 @@ struct HomeView: View {
                     }
                 }
             case .sessions:
-                // Sessions view placeholder
-                Text("Sessions View")
-                    .font(.largeTitle)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                // Render nothing here; overlay handles presentation
+                EmptyView()
             case .journal:
                 // Render nothing here; fullScreenCover handles presentation
                 EmptyView()

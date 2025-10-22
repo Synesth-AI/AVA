@@ -23,7 +23,7 @@ extension Text {
     }
     
     func appCaption() -> some View {
-        self.font(.system(size: 16, weight: .regular, design: .rounded))
+        self.font(.system(size: 18, weight: .regular, design: .rounded))
     }
     
     func appSmallCaption() -> some View {
